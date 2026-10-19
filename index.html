@@ -1,0 +1,2805 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VIRA Pass — кликабельный прототип</title>
+<style>
+:root{
+  --bg:#f4f6f5;--surface:#fff;--text:#1d2420;--muted:#707b75;
+  --line:#d8dfdb;--accent:#246c56;--soft:#f1f4f2;
+  --ok:#2f7253;--okbg:#eaf5ef;--warn:#8a681e;--warnbg:#fff7df;
+  --bad:#9f4343;--badbg:#fbecec
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+input.nav-state{position:absolute;opacity:0;pointer-events:none}
+.app{max-width:1180px;margin:0 auto;min-height:100vh;background:var(--surface);border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.top{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;border-bottom:1px solid var(--line);background:#fff}
+.brand{font-weight:800;font-size:19px;letter-spacing:.04em}
+.role{font-size:12px;color:var(--muted)}
+.role strong{color:var(--text)}
+.nav{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line);background:#fff}
+.nav label{text-align:center;padding:15px;color:#69736e;font-weight:700;border-right:1px solid var(--line);cursor:pointer}
+.nav label:last-child{border-right:0}
+.nav label:hover{background:#fafcfb;color:var(--text)}
+.screen{display:none;padding:26px}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:18px}
+h1{font-size:24px;margin:0 0 5px}
+h2{font-size:18px;margin:0 0 12px}
+p{margin:0;color:var(--muted);font-size:13px;line-height:1.45}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-block;border:1px solid var(--line);border-radius:5px;padding:9px 13px;font-size:12px;font-weight:700;color:var(--text);background:#fff;cursor:pointer;text-decoration:none}
+.btn:hover{background:#f8faf9}
+.btn.primary{background:var(--text);border-color:var(--text);color:#fff}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.bad{background:var(--bad);border-color:var(--bad);color:#fff}
+.toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.field{border:1px solid var(--line);background:#fff;border-radius:4px;padding:8px 10px;color:#7a837e;font-size:12px}
+.search{min-width:260px}
+.table{border:1px solid var(--line);overflow:auto;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;background:var(--soft);padding:9px;color:#59645f;font-size:11px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px 9px;border-bottom:1px solid #e8ecea}
+tr:last-child td{border-bottom:0}
+.click{color:var(--accent);font-weight:700;cursor:pointer}
+.badge{display:inline-block;border-radius:4px;padding:4px 7px;font-size:10px;font-weight:700;background:#eef1ef;color:#5f6964}
+.badge.ok{background:var(--okbg);color:var(--ok)}
+.badge.warn{background:var(--warnbg);color:var(--warn)}
+.badge.bad{background:var(--badbg);color:var(--bad)}
+.card{border:1px solid var(--line);padding:16px;background:#fff;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.label{font-size:10px;font-weight:700;color:#69736e;margin-bottom:5px}
+.input,.select{border:1px solid var(--line);border-radius:4px;padding:9px;background:#fff;font-size:12px;min-height:34px;width:100%}
+.route{margin-top:10px;border:1px solid var(--line);background:#f5f7f6;padding:9px 11px;font-size:11px;color:#5f6964}
+.employee-list{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.employee-row{border:1px solid var(--line);padding:14px;display:grid;grid-template-columns:1fr 170px 26px;gap:12px;align-items:center;background:#fff;cursor:pointer}
+.employee-row:hover{background:#fafcfb}
+.employee-row strong{font-size:14px}
+.employee-row small{font-size:11px;color:var(--muted)}
+.arrow{font-size:20px;color:#9ba49f}
+.summary{border:1px solid var(--line);border-top:0;background:#f8faf9;padding:10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.summary span{font-size:11px;color:var(--muted)}
+.summary strong{color:var(--text)}
+.detail{display:grid;grid-template-columns:170px 1fr;border:1px solid var(--line);margin-bottom:14px}
+.detail div{padding:9px;border-bottom:1px solid var(--line)}
+.detail div:nth-last-child(-n+2){border-bottom:0}
+.detail .k{background:var(--soft);font-size:11px;font-weight:700;color:#606a65}
+.note{border:1px solid #e8dca8;background:#fff8df;padding:10px 12px;font-size:11px;color:#715b1b;margin-bottom:12px}
+.form-table input{width:100%;border:0;background:transparent;padding:7px;outline:none}
+.form-table input:focus{background:#eef7f3}
+.modal-card{max-width:520px;margin:36px auto;border:1px solid var(--line);padding:20px;background:#fff}
+.choice{display:flex;gap:8px;margin-top:14px}
+.choice label{flex:1;text-align:center}
+.modebox{display:none}
+#type-ordinary:checked ~ .app .ordinary-only{display:block}
+#type-onetime:checked ~ .app .onetime-only{display:block}
+#type-ordinary:checked ~ .app .onetime-inline{display:none}
+#type-onetime:checked ~ .app .ordinary-inline{display:none}
+.type-switch{display:flex;gap:6px}
+.type-switch label{border:1px solid var(--line);padding:8px 10px;border-radius:4px;cursor:pointer;font-size:12px;background:#fff}
+#type-ordinary:checked ~ .app label[for="type-ordinary"],
+#type-onetime:checked ~ .app label[for="type-onetime"]{background:var(--text);color:#fff;border-color:var(--text)}
+
+/* Screen switching */
+#screen-requests:checked ~ .app #requests,
+#screen-employees:checked ~ .app #employees,
+#screen-new:checked ~ .app #new-request,
+#screen-detail:checked ~ .app #request-detail,
+#screen-onetime:checked ~ .app #one-time,
+#screen-reject:checked ~ .app #reject,
+#screen-processed:checked ~ .app #processed,
+#screen-rejected-result:checked ~ .app #rejected-result,
+#screen-execution:checked ~ .app #execution,
+#screen-error:checked ~ .app #execution-error{display:block}
+
+#screen-requests:checked ~ .app label[for="screen-requests"].tab,
+#screen-detail:checked ~ .app label[for="screen-requests"].tab,
+#screen-onetime:checked ~ .app label[for="screen-requests"].tab,
+#screen-new:checked ~ .app label[for="screen-requests"].tab,
+#screen-reject:checked ~ .app label[for="screen-requests"].tab,
+#screen-processed:checked ~ .app label[for="screen-requests"].tab,
+#screen-rejected-result:checked ~ .app label[for="screen-requests"].tab,
+#screen-execution:checked ~ .app label[for="screen-requests"].tab,
+#screen-error:checked ~ .app label[for="screen-requests"].tab,
+#screen-employees:checked ~ .app label[for="screen-employees"].tab{
+  color:var(--text);box-shadow:inset 0 -3px 0 var(--accent);background:#fcfdfc
+}
+
+@media(max-width:760px){
+  .app{border:0}.top,.screen{padding-left:14px;padding-right:14px}
+  .grid{grid-template-columns:1fr 1fr}.employee-row{grid-template-columns:1fr 120px}
+  .head{flex-direction:column}.search{min-width:100%}
+}
+
+/* More table-oriented version */
+.screen{padding:20px 22px 28px}
+.head{align-items:center;margin-bottom:12px}
+h1{font-size:21px}
+.table{border-color:#cfd7d3}
+table{font-size:11px}
+th{padding:8px 7px;border-right:1px solid #cfd7d3}
+td{padding:8px 7px;border-right:1px solid #e5eae7}
+th:last-child,td:last-child{border-right:0}
+.num{width:42px;text-align:center;background:#f7f9f8;color:#737d78}
+.section-title{padding:8px 9px;background:#f6f8f7;border:1px solid #cfd7d3;border-bottom:0;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.form-label{background:#f4f6f5;font-weight:700;color:#5f6964;width:130px}
+.form-table select{width:100%;border:0;background:transparent;padding:7px;font-size:11px;outline:none}
+.employee-new-row{display:none;background:#fffef8}
+#add-employee-request:checked ~ .app .employee-new-row.request-row{display:table-row}
+#add-employee-list:checked ~ .app .employee-new-row.list-row{display:table-row}
+#add-employee-request:checked ~ .app label[for="add-employee-request"],
+#add-employee-list:checked ~ .app label[for="add-employee-list"]{display:none}
+
+
+/* Existing employee picker */
+.employee-picker{display:none;border:1px solid var(--line);border-top:0;background:#fff}
+.employee-picker.open{display:block}
+.picker-head{display:flex;align-items:center;justify-content:space-between;padding:8px 9px;background:#f8faf9;border-bottom:1px solid var(--line);font-size:10px}
+.picker-row{display:grid;grid-template-columns:34px 1.5fr 1fr 1fr 110px;align-items:center;border-bottom:1px solid var(--line2);font-size:10.5px}
+.picker-row:last-child{border-bottom:0}
+.picker-row>div{padding:7px 8px;border-right:1px solid var(--line2)}
+.picker-row>div:last-child{border-right:0;text-align:right}
+.picker-row.headrow{background:var(--head);font-weight:700;color:#59645f;font-size:9.5px}
+.picked-row{display:none}
+.added-label{display:none;color:var(--ok);font-weight:700;font-size:9px}
+
+
+/* CRUD employees */
+.action-cell{white-space:nowrap;min-width:150px}
+.employee-action{margin-right:4px}
+.row-edit-input{width:100%;border:1px solid var(--line);border-radius:3px;padding:6px 7px;font-size:10.5px;background:#fff}
+.row-edit-select{width:100%;border:1px solid var(--line);border-radius:3px;padding:6px 7px;font-size:10.5px;background:#fff}
+.unsaved-row td{background:#fffdf3}
+.saved-flash td{animation:savedFlash .8s ease}
+@keyframes savedFlash{0%{background:#eaf5ef}100%{background:transparent}}
+.crud-note{font-size:9.5px;color:var(--muted);margin-top:7px}
+
+
+/* Filters, sorting, roles */
+.role-switcher{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--muted)}
+.role-switcher select{border:1px solid var(--line);background:#fff;border-radius:4px;padding:7px 9px;font-size:11px;color:var(--text)}
+.sortable{cursor:pointer;user-select:none;padding-right:18px!important;position:relative}
+.sortable:after{content:"⇅";position:absolute;right:5px;color:#9aa39f;font-size:9px}
+.sortable[data-dir="asc"]:after{content:"↑";color:var(--accent)}
+.sortable[data-dir="desc"]:after{content:"↓";color:var(--accent)}
+.filter-input,.filter-select{border:1px solid var(--line);background:#fff;border-radius:3px;padding:7px 8px;font-size:10.5px;color:var(--text);min-height:30px}
+.filter-input{min-width:220px}
+.toolbar-count{font-size:10px;color:var(--muted)}
+.role-hidden{display:none!important}
+.readonly-note{display:none;font-size:10px;color:var(--muted);padding:7px 9px;border:1px solid var(--line);border-top:0;background:#fafbfa}
+
+
+/* v5 fixes: compact controls, reliable search/filter UI */
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.toolbar-left{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.filter-input{width:250px;min-width:250px;max-width:250px;height:30px;padding:6px 8px}
+.filter-select{height:30px;padding:5px 7px;min-width:128px}
+.filter-reset{height:30px;padding:5px 8px;font-size:9.5px}
+.action-cell{white-space:nowrap;min-width:98px;width:98px}
+.mini-action{
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);background:#fff;color:#4f5a55;
+  border-radius:3px;padding:3px 5px;font-size:9px;line-height:1.1;
+  min-height:22px;margin-right:3px;cursor:pointer
+}
+.mini-action:last-child{margin-right:0}
+.mini-action:hover{background:#f4f7f5}
+.mini-action.delete{color:var(--bad);border-color:#e3caca;background:#fff}
+.mini-action.delete:hover{background:var(--badbg)}
+#employeesTable th:last-child,#employeesTable td:last-child{width:98px}
+#requestEmployeesBody .action-cell{min-width:98px;width:98px}
+@media(max-width:900px){
+  .filter-input{width:210px;min-width:210px;max-width:210px}
+  .filter-select{min-width:112px}
+}
+
+
+/* v6 role-aware demo data */
+.role-capabilities{
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  padding:7px 22px;border-bottom:1px solid var(--line);background:#fafbfa;
+  font-size:10px;color:var(--muted)
+}
+.role-capabilities strong{color:var(--text)}
+.cap-chip{border:1px solid var(--line);background:#fff;border-radius:3px;padding:4px 6px;color:#56615c}
+.status-info{background:#eef3f1;color:#52625b}
+.status-error{background:#fbecec;color:var(--bad)}
+.role-only-action{display:none}
+.request-contractor-filter{min-width:150px}
+#employeesTable td:nth-child(4){white-space:nowrap}
+
+.pick-btn:disabled{background:#f2f4f3;color:#8a948e;border-color:var(--line)}
+
+/* v8: role navigation moved out of header */
+.section-nav{display:flex;gap:6px;padding:10px 22px 0;background:#fff}
+.section-tab{border:1px solid var(--line);border-radius:4px;padding:7px 12px;font-size:11px;font-weight:700;color:#68736d;background:#fff;cursor:pointer}
+.section-tab:hover{background:#f7f9f8;color:var(--text)}
+#screen-requests:checked ~ .app .requests-tab,
+#screen-detail:checked ~ .app .requests-tab,
+#screen-onetime:checked ~ .app .requests-tab,
+#screen-reject:checked ~ .app .requests-tab,
+#screen-processed:checked ~ .app .requests-tab,
+#screen-rejected-result:checked ~ .app .requests-tab,
+#screen-execution:checked ~ .app .requests-tab,
+#screen-error:checked ~ .app .requests-tab,
+#screen-employees:checked ~ .app .employees-tab,
+#screen-contractors:checked ~ .app .contractors-tab{background:var(--text);border-color:var(--text);color:#fff}
+#screen-contractors:checked ~ .app #contractors{display:block}
+
+/* request creation is a real modal, not a full page */
+#screen-new:checked ~ .app #new-request{display:none}
+.request-modal-overlay{display:none!important;position:fixed;inset:0;z-index:200;background:rgba(22,29,25,.42);padding:28px;overflow:auto;align-items:flex-start;justify-content:center}
+.request-modal-overlay.open{display:flex!important}
+.request-modal-card{width:min(1040px,100%);background:#fff;border:1px solid #cbd3cf;border-radius:8px;box-shadow:0 18px 55px rgba(24,33,29,.22);padding:18px;margin:auto}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.modal-head h1,.modal-head h2{margin:0 0 4px}
+.modal-close{border:0;background:transparent;font-size:25px;line-height:1;color:#6f7974;cursor:pointer;padding:0 3px}
+.request-params td{vertical-align:middle}
+.date-rule{font-size:10.5px;color:var(--muted);padding:7px 2px 0}
+.employee-bottom-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0}
+.employee-bottom-actions span{font-size:10px;color:var(--muted)}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.privacy-note{font-size:10px;color:#5d6862;background:#f7f9f8;border:1px solid var(--line);padding:8px 10px;margin-top:8px}
+.privacy-note.compact{margin-top:6px}
+.passport-value{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
+.passport-toggle{border:0;background:transparent;color:var(--accent);font-size:9px;font-weight:700;cursor:pointer;padding:2px 4px}
+
+/* employee flow sub-modals */
+.submodal-overlay{display:none;position:fixed;inset:0;z-index:260;background:rgba(22,29,25,.46);padding:24px;align-items:center;justify-content:center}
+.submodal-overlay.open{display:flex}
+.submodal-card{width:min(720px,100%);max-height:88vh;overflow:auto;background:#fff;border:1px solid #cbd3cf;border-radius:8px;box-shadow:0 16px 48px rgba(24,33,29,.24);padding:18px}
+.small-choice{max-width:610px}
+.employee-choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choice-card{border:1px solid var(--line);background:#fff;border-radius:6px;text-align:left;padding:16px;cursor:pointer;color:var(--text)}
+.choice-card:hover{border-color:#9eb5ab;background:#f8fbf9}
+.choice-card strong{display:block;font-size:14px;margin-bottom:5px}.choice-card span{font-size:10.5px;color:var(--muted);line-height:1.4}
+.picker-list-v8{border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.picker-check{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+.picker-check:last-child{border-bottom:0}.picker-check:hover{background:#f8faf9}.picker-check input{width:16px;height:16px}
+.picker-check span{display:flex;flex-direction:column;gap:3px}.picker-check strong{font-size:11.5px}.picker-check small{font-size:9.5px;color:var(--muted)}
+.modal-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.modal-form-grid label span{display:block;font-size:10px;font-weight:700;color:#69736e;margin-bottom:5px}
+
+@media(max-width:760px){
+  .section-nav{padding-left:14px;padding-right:14px;overflow:auto}
+  .request-modal-overlay{padding:10px}.request-modal-card{padding:13px}
+  .employee-choice-grid,.modal-form-grid{grid-template-columns:1fr}
+  .request-params tr,.request-params td{display:block;width:100%}.request-params .form-label{width:auto}
+}
+
+
+
+/* v9: contractor creation / personal account for Security */
+.contractor-create-action{display:flex;gap:8px;align-items:center}
+.contractor-account{display:flex;flex-direction:column;gap:2px;min-width:130px}
+.contractor-account small{font-size:9px;color:var(--muted)}
+.contractor-action-cell{white-space:nowrap;min-width:180px}
+.contractor-action-cell .mini-action{margin-right:4px}
+.mini-action.danger{border-color:#efc9c9;color:#a61b1b;background:#fff}
+.contractor-modal-card{width:min(760px,100%)}
+.contractor-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.contractor-form-grid .full{grid-column:1/-1}
+.form-block label{display:block;font-size:10px;font-weight:700;color:#57625c;margin-bottom:5px}
+.form-block .input{width:100%}
+.project-checks{display:flex;gap:8px;flex-wrap:wrap;border:1px solid var(--line);border-radius:4px;padding:9px;background:#fafbfa}
+.project-check{display:flex;align-items:center;gap:6px;font-size:10px;color:#4f5a55;cursor:pointer}
+.password-row{display:grid;grid-template-columns:1fr auto auto;gap:7px;align-items:center}
+.password-row input{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
+.copy-feedback{min-height:16px;font-size:9.5px;color:var(--ok);margin-top:4px}
+.contractor-create-result{display:none;margin-top:12px;padding:10px 12px;border:1px solid #cde3d7;background:var(--okbg);color:var(--ok);font-size:10.5px;border-radius:4px}
+.contractor-create-result.show{display:block}
+.credential-note{font-size:9.5px;color:var(--muted);line-height:1.45;margin-top:6px}
+@media(max-width:720px){
+  .contractor-form-grid{grid-template-columns:1fr}
+  .contractor-form-grid .full{grid-column:auto}
+  .password-row{grid-template-columns:1fr 1fr}
+  .password-row input{grid-column:1/-1}
+}
+
+
+/* v12 — сквозные сценарии */
+.request-number-link{border:0;background:transparent;padding:0;color:var(--accent);font:inherit;font-weight:700;cursor:pointer}
+.request-number-link:hover{text-decoration:underline}
+.validation-message{display:none;margin-top:10px;padding:9px 11px;border:1px solid #e4bcbc;background:var(--badbg);color:var(--bad);border-radius:6px;font-size:13px}
+.validation-message.show{display:block}
+.prototype-hint{font-size:12px;color:var(--muted);margin-right:auto}
+
+
+/* v13 — MVP clean: меньше визуального шума, функциональность сохранена */
+.role-capabilities{display:none!important}
+.toolbar-right{display:none!important}
+
+/* Реестр заявок: объект-фильтр не нужен, поиск покрывает объект */
+#reqProject,.filter-reset{display:none!important}
+
+/* Реестр сотрудников: оставить поиск + состояние */
+#empContractor,#empProject{display:none!important}
+
+/* Реестр подрядчиков: достаточно поиска */
+#contractorProject{display:none!important}
+
+/* Таблица заявок: скрыть служебные колонки "Сотр." и "Этап" */
+#requestsTable th:nth-child(8),#requestsTable td:nth-child(8),
+#requestsTable th:nth-child(9),#requestsTable td:nth-child(9){display:none!important}
+
+/* Подрядчик не видит одноимённую колонку в своих заявках */
+body[data-role="contractor"] #requestsTable th:nth-child(4),
+body[data-role="contractor"] #requestsTable td:nth-child(4){display:none!important}
+
+/* Подрядчики: убрать статистику, не нужную для CRUD */
+#contractorsTable th:nth-child(5),#contractorsTable td:nth-child(5),
+#contractorsTable th:nth-child(6),#contractorsTable td:nth-child(6){display:none!important}
+
+/* Сотрудники: ИНН не нужен в реестре; организация только администратору */
+#employeesTable th:nth-child(5),#employeesTable td:nth-child(5){display:none!important}
+#employeesTable th:nth-child(4),#employeesTable td:nth-child(4){display:none!important}
+body[data-role="admin"] #employeesTable th:nth-child(4),
+body[data-role="admin"] #employeesTable td:nth-child(4){display:table-cell!important}
+
+/* Убираем служебные пояснения из MVP */
+.privacy-note,.crud-note,.readonly-note,.credential-note{display:none!important}
+.date-rule.ordinary-inline{display:none!important}
+.date-rule.onetime-inline{font-size:10.5px;color:var(--muted);background:transparent;border:0;padding:5px 0;margin:0}
+.date-rule.onetime-inline strong{font-weight:600}
+
+/* Компактнее списки и модальные формы */
+.request-employees-table th:nth-child(4),.request-employees-table td:nth-child(4),
+.request-employees-table th:nth-child(5),.request-employees-table td:nth-child(5),
+.request-employees-table th:nth-child(6),.request-employees-table td:nth-child(6){display:none!important}
+.request-employees-table th:nth-child(7),.request-employees-table td:nth-child(7){width:74px}
+
+#request-detail table th:nth-child(n+3),#request-detail table td:nth-child(n+3),
+#one-time table th:nth-child(n+3),#one-time table td:nth-child(n+3){display:none!important}
+
+/* Технические действия Обработка — маленькие и только для тестирования */
+
+
+/* v14 — финализация MVP после встречи */
+body[data-role="contractor"] .request-contractor-filter{display:none!important}
+body[data-role="manager"] .request-contractor-filter{display:none!important}
+
+/* Пароль не показываем повторно после создания */
+.contractor-action-cell .password-repeat{display:none!important}
+
+
+/* v15 — навигация в header, единые формы добавления и фильтры */
+.top{height:auto;min-height:64px;justify-content:flex-start;gap:20px;flex-wrap:wrap}
+.top .section-nav{display:flex;gap:6px;padding:0;background:transparent;margin:0}
+.top .section-tab{padding:7px 11px}
+.role-switcher{margin-left:auto}
+
+#reqProject,.filter-reset,#contractorProject,#empProject{display:inline-flex!important}
+#contractorStatus{display:inline-flex!important}
+#empContractor{display:none!important}
+body[data-role="admin"] #empContractor{display:inline-flex!important}
+
+.inline-employee-editor{display:none;border:1px solid var(--line);border-radius:6px;background:#fafbfa;margin:4px 0 10px;padding:12px}
+.inline-employee-editor.open{display:block}
+.inline-editor-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.inline-editor-tabs{display:flex;gap:6px}
+.inline-editor-tab{border:1px solid var(--line);background:#fff;border-radius:4px;padding:7px 10px;font-size:10.5px;font-weight:700;cursor:pointer;color:#65706a}
+.inline-editor-tab.active{background:var(--text);border-color:var(--text);color:#fff}
+.inline-editor-panel{display:none}
+.inline-editor-panel.active{display:block}
+.inline-editor-actions{display:flex;justify-content:flex-end;margin-top:10px}
+.inline-search-row{margin-bottom:8px}
+.inline-search-row .filter-input{width:100%;max-width:360px}
+.inline-close{font-size:20px}
+.employee-registry-modal-card{width:min(720px,100%)}
+#contractorAccountStatus{width:100%}
+.contractor-account .badge{width:max-content}
+@media(max-width:760px){
+  .top{gap:10px;padding-top:10px;padding-bottom:10px}
+  .top .section-nav{order:3;width:100%;overflow:auto}
+  .role-switcher{margin-left:auto}
+}
+
+
+.employee-edit-only{display:none}
+#employeeRegistryModal[data-mode="edit"] .employee-edit-only{display:flex}
+
+
+/* v17 — единая типографика и геометрия интерфейса */
+body{
+  font-size:13px!important;
+  line-height:1.4!important;
+  font-family:Arial,Helvetica,sans-serif!important;
+}
+.top{height:62px!important}
+.brand{font-size:18px!important;font-weight:800!important;line-height:1.2!important}
+.header-tab,.tab,.section-tab{font-size:12px!important;line-height:1.2!important}
+.screen{padding:22px 24px 28px!important}
+.head{margin-bottom:14px!important;align-items:center!important}
+.head h1,.modal-head h1{
+  font-size:20px!important;
+  line-height:1.2!important;
+  font-weight:700!important;
+  margin:0 0 4px!important;
+}
+h1{
+  font-size:20px!important;
+  line-height:1.2!important;
+  font-weight:700!important;
+}
+h2,.modal-head h2{
+  font-size:17px!important;
+  line-height:1.25!important;
+  font-weight:700!important;
+  margin:0!important;
+}
+p,.sub,.head p,.modal-head p{
+  font-size:12px!important;
+  line-height:1.45!important;
+  color:var(--muted)!important;
+}
+.btn,.mini-action{
+  font-size:12px!important;
+  line-height:1.2!important;
+  font-weight:700!important;
+}
+.btn{min-height:34px!important;padding:8px 12px!important}
+.input,.select,.filter-input,.filter-select,.role-switcher select{
+  font-size:12px!important;
+  line-height:1.2!important;
+  min-height:34px!important;
+}
+table{font-size:12px!important}
+th{
+  font-size:11px!important;
+  line-height:1.2!important;
+  padding:8px!important;
+}
+td{
+  font-size:12px!important;
+  line-height:1.35!important;
+  padding:9px 8px!important;
+}
+.section-title,.detail .k,.form-label{
+  font-size:11px!important;
+  line-height:1.25!important;
+}
+.badge{font-size:10px!important;line-height:1.2!important}
+.modal-form-grid{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:12px!important;
+  align-items:start!important;
+}
+.modal-form-grid label span,.form-block label{
+  font-size:11px!important;
+  line-height:1.2!important;
+  margin-bottom:5px!important;
+}
+.passport-field-pair{
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:140px 140px;
+  gap:12px;
+  justify-content:start;
+  align-items:start;
+}
+.passport-field-pair label{min-width:0}
+.passport-input{
+  width:140px!important;
+  max-width:140px!important;
+  min-width:140px!important;
+  text-align:left;
+  letter-spacing:.02em;
+}
+.employee-registry-modal-card{max-width:680px!important}
+.inline-editor-panel .passport-field-pair{margin-top:0}
+#reject .modal-card{max-width:560px!important}
+#reject .modal-card h1{font-size:20px!important;line-height:1.2!important}
+@media(max-width:760px){
+  .screen{padding:16px!important}
+  .passport-field-pair{
+    grid-template-columns:1fr 1fr;
+    width:100%;
+  }
+  .passport-input{
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+  }
+}
+
+
+/* latest neutral header */
+:root{
+  --role-header-bg:#ffffff;
+  --role-header-active:#eef2ff;
+  --role-header-active-text:#3446a8;
+  --role-header-text:#111827;
+}
+.top{
+  background:#ffffff!important;
+  color:var(--role-header-text)!important;
+  min-height:72px!important;
+  padding:12px 24px!important;
+  border-bottom:1px solid #e5e7eb!important;
+  box-shadow:none!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:18px!important;
+}
+.brand{
+  color:#111827!important;
+  font-size:22px!important;
+  font-weight:800!important;
+  line-height:1!important;
+  letter-spacing:.4px!important;
+  text-transform:uppercase!important;
+  min-width:92px!important;
+}
+.brand::after{content:none!important;display:none!important}
+.section-nav{
+  display:flex!important;align-items:center!important;gap:12px!important;
+  flex:1 1 auto!important;justify-content:flex-start!important;
+}
+.section-tab{
+  display:none!important;align-items:center!important;justify-content:center!important;
+  min-width:118px!important;height:42px!important;padding:0 16px!important;
+  border-radius:8px!important;background:transparent!important;color:#374151!important;
+  border:0!important;box-shadow:none!important;font-size:13px!important;font-weight:700!important;
+  line-height:1!important;letter-spacing:.15px!important;text-transform:uppercase!important;
+  text-decoration:none!important;cursor:pointer!important;
+}
+.section-tab:hover{background:#f3f4f6!important}
+#screen-requests:checked ~ .app .requests-tab,
+#screen-detail:checked ~ .app .requests-tab,
+#screen-onetime:checked ~ .app .requests-tab,
+#screen-reject:checked ~ .app .requests-tab,
+#screen-processed:checked ~ .app .requests-tab,
+#screen-rejected-result:checked ~ .app .requests-tab,
+#screen-execution:checked ~ .app .requests-tab,
+#screen-error:checked ~ .app .requests-tab,
+#screen-employees:checked ~ .app .employees-tab,
+#screen-contractors:checked ~ .app .contractors-tab{
+  background:var(--role-header-active)!important;
+  color:var(--role-header-active-text)!important;
+}
+.role-switcher{
+  display:flex!important;align-items:center!important;gap:8px!important;margin-left:auto!important;
+}
+.role-switcher span{
+  color:#6b7280!important;font-size:11px!important;font-weight:600!important;
+  text-transform:uppercase!important;letter-spacing:.2px!important;
+}
+.role-switcher select{
+  min-width:170px!important;height:36px!important;border-radius:8px!important;
+  border:1px solid #d1d5db!important;background:#fff!important;color:#111827!important;
+  font-size:12px!important;padding:0 32px 0 12px!important;
+}
+body[data-role="contractor"] .requests-tab,
+body[data-role="contractor"] .employees-tab{display:inline-flex!important}
+body[data-role="security"] .requests-tab,
+body[data-role="security"] .contractors-tab{display:inline-flex!important}
+body[data-role="manager"] .requests-tab{display:inline-flex!important}
+body[data-role="admin"] .requests-tab,
+body[data-role="admin"] .employees-tab,
+body[data-role="admin"] .contractors-tab{display:inline-flex!important}
+.screen{padding-top:22px!important}
+
+</style>
+</head>
+<body data-mvp-statuses="approval,execution,processed,rejected,execution_error">
+
+<!-- Navigation state -->
+<input class="nav-state" type="radio" name="screen" id="screen-requests" checked>
+<input class="nav-state" type="radio" name="screen" id="screen-employees">
+<input class="nav-state" type="radio" name="screen" id="screen-contractors">
+<input class="nav-state" type="radio" name="screen" id="screen-new">
+<input class="nav-state" type="radio" name="screen" id="screen-detail">
+<input class="nav-state" type="radio" name="screen" id="screen-onetime">
+<input class="nav-state" type="radio" name="screen" id="screen-reject">
+<input class="nav-state" type="radio" name="screen" id="screen-processed">
+<input class="nav-state" type="radio" name="screen" id="screen-rejected-result">
+<input class="nav-state" type="radio" name="screen" id="screen-execution">
+<input class="nav-state" type="radio" name="screen" id="screen-error">
+
+<!-- Request type state -->
+<input class="nav-state" type="radio" name="request-type" id="type-ordinary" checked>
+<input class="nav-state" type="radio" name="request-type" id="type-onetime">
+<input class="nav-state" type="checkbox" id="add-employee-request">
+<input class="nav-state" type="checkbox" id="add-employee-list">
+
+<div class="app">
+  <header class="top">
+    <div class="brand">VIRA</div>
+    <div class="section-nav" id="sectionNav">
+      <label class="section-tab requests-tab" for="screen-requests">Заявки</label>
+      <label class="section-tab employees-tab" for="screen-employees">Сотрудники</label>
+      <label class="section-tab contractors-tab" for="screen-contractors">Подрядчики</label>
+    </div>
+    <div class="role-switcher">
+      <span>Роль</span>
+      <select id="roleSelect" onchange="setRole(this.value)">
+        <option value="contractor">Подрядчик</option>
+        <option value="security">СБ</option>
+        <option value="manager">Руководитель площадки</option>
+        <option value="admin">Администратор</option>
+      </select>
+    </div>
+  </header>
+
+
+<div class="role-capabilities">
+  <strong id="roleTitle">Подрядчик</strong>
+  <span id="roleDescription">Свои заявки и сотрудники организации</span>
+  <span class="cap-chip" id="cap1">Создание заявок</span>
+  <span class="cap-chip" id="cap2">Редактирование сотрудников</span>
+  <span class="cap-chip" id="cap3">Просмотр статусов</span>
+</div>
+  <!-- ЗАЯВКИ -->
+  <main class="screen" id="requests">
+  <div class="head">
+    <div><h1>Заявки</h1><p id="requestsSubtitle">Заявки вашей организации.</p></div>
+    <div class="actions role-contractor-action"><button class="btn primary" type="button" onclick="openRequestModal()">+ Новая заявка</button></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <input class="filter-input" id="reqSearch" autocomplete="off" placeholder="Поиск по заявкам" oninput="applyRequestFilters()">
+      <select class="filter-select" id="reqStatus" onchange="applyRequestFilters()">
+        <option value="">Все статусы</option>
+        <option value="approval">На согласовании</option>
+        <option value="execution">На исполнении</option>
+        <option value="processed">Обработана</option>
+        <option value="rejected">Отклонена</option>
+        <option value="execution_error">Ошибка исполнения</option>
+      </select>
+      <select class="filter-select" id="reqType" onchange="applyRequestFilters()">
+        <option value="">Все типы пропусков</option>
+        <option value="ordinary">Обычный</option>
+        <option value="onetime">Разовый</option>
+      </select>
+      <select class="filter-select" id="reqProject" onchange="applyRequestFilters()">
+        <option value="">Все объекты</option>
+        <option>ЖК Сподвижники</option>
+        <option>ЖК Европейский берег</option>
+        <option>ЖК Расцветай</option>
+      </select>
+      <select class="filter-select request-contractor-filter" id="reqContractor" onchange="applyRequestFilters()">
+        <option value="">Все подрядчики</option>
+        <option>ООО «МонтажСтрой»</option>
+        <option>ООО «СтройГрад»</option>
+        <option>ООО «СибМонтаж»</option>
+        <option>ООО «ФасадПро»</option>
+      </select>
+      <button class="btn filter-reset" type="button" onclick="resetRequestFilters()">Сбросить</button>
+    </div>
+    <div class="toolbar-right"><span class="toolbar-count" id="requestCount">0 заявок</span></div>
+  </div>
+
+  <div class="table">
+    <table id="requestsTable">
+      <thead><tr>
+        <th class="num">№</th>
+        <th class="sortable" onclick="sortTable('requestsTable',1,'number',this)">Заявка</th>
+        <th class="sortable" onclick="sortTable('requestsTable',2,'date',this)">Дата</th>
+        <th class="sortable" onclick="sortTable('requestsTable',3,'text',this)">Подрядчик</th>
+        <th class="sortable" onclick="sortTable('requestsTable',4,'text',this)">Тип пропуска</th>
+        <th class="sortable" onclick="sortTable('requestsTable',5,'text',this)">Объект</th>
+        <th class="sortable" onclick="sortTable('requestsTable',6,'text',this)">Период</th>
+        <th class="sortable" onclick="sortTable('requestsTable',7,'number',this)">Сотр.</th>
+        <th class="sortable" onclick="sortTable('requestsTable',8,'text',this)">Этап</th>
+        <th class="sortable" onclick="sortTable('requestsTable',9,'text',this)">Статус</th>
+      </tr></thead>
+      <tbody>
+        <!-- ООО МонтажСтрой: доступно подрядчику + соответствующей согласующей роли -->
+        <tr data-status="approval" data-type="ordinary" data-project="ЖК Сподвижники" data-contractor="ООО «МонтажСтрой»" data-route="security" data-search="1108 монтажстрой обычный сподвижники СБ согласование">
+          <td class="num"></td><td><label class="click" for="screen-detail">1108</label></td><td>14.08.2026</td><td class="emp-owner">ООО «МонтажСтрой»</td><td>Обычный</td><td>ЖК Сподвижники</td><td>15.08–30.09</td><td>2</td><td>СБ</td><td><span class="badge warn">На согласовании</span></td>
+        </tr>
+        <tr data-status="approval" data-type="onetime" data-project="ЖК Европейский берег" data-contractor="ООО «МонтажСтрой»" data-route="manager" data-search="1107 монтажстрой разовый европейский берег руководитель">
+          <td class="num"></td><td><label class="click" for="screen-onetime">1107</label></td><td>14.08.2026</td><td>ООО «МонтажСтрой»</td><td>Разовый</td><td>ЖК Европейский берег</td><td>14.08–14.08</td><td>1</td><td>Рук. площадки</td><td><span class="badge warn">На согласовании</span></td>
+        </tr>
+        <tr data-status="execution" data-type="ordinary" data-project="ЖК Расцветай" data-contractor="ООО «МонтажСтрой»" data-route="security" data-search="1104 монтажстрой обычный расцветай обработка исполнение">
+          <td class="num"></td><td><label class="click" for="screen-execution">1104</label></td><td>13.08.2026</td><td>ООО «МонтажСтрой»</td><td>Обычный</td><td>ЖК Расцветай</td><td>14.08–20.09</td><td>3</td><td>Исполнение</td><td><span class="badge status-info">На исполнении</span></td>
+        </tr>
+        <tr data-status="processed" data-type="ordinary" data-project="ЖК Сподвижники" data-contractor="ООО «МонтажСтрой»" data-route="security" data-search="1099 монтажстрой обычный сподвижники обработана">
+          <td class="num"></td><td><label class="click" for="screen-processed">1099</label></td><td>12.08.2026</td><td>ООО «МонтажСтрой»</td><td>Обычный</td><td>ЖК Сподвижники</td><td>12.08–30.08</td><td>1</td><td>—</td><td><span class="badge ok">Обработана</span></td>
+        </tr>
+        <tr data-status="rejected" data-type="ordinary" data-project="ЖК Расцветай" data-contractor="ООО «МонтажСтрой»" data-route="security" data-search="1096 монтажстрой обычный расцветай отказ отклонена">
+          <td class="num"></td><td><label class="click" for="screen-rejected-result">1096</label></td><td>11.08.2026</td><td>ООО «МонтажСтрой»</td><td>Обычный</td><td>ЖК Расцветай</td><td>12.08–31.08</td><td>1</td><td>—</td><td><span class="badge bad">Отклонена</span></td>
+        </tr>
+        <tr data-status="execution_error" data-type="onetime" data-project="ЖК Европейский берег" data-contractor="ООО «МонтажСтрой»" data-route="manager" data-search="1094 монтажстрой разовый европейский берег ошибка исполнения">
+          <td class="num"></td><td><label class="click" for="screen-error">1094</label></td><td>10.08.2026</td><td>ООО «МонтажСтрой»</td><td>Разовый</td><td>ЖК Европейский берег</td><td>10.08–10.08</td><td>1</td><td>Исполнение</td><td><span class="badge status-error">Ошибка исполнения</span></td>
+        </tr>
+
+        <!-- Обычные заявки других подрядчиков: СБ -->
+        <tr data-status="approval" data-type="ordinary" data-project="ЖК Европейский берег" data-contractor="ООО «СтройГрад»" data-route="security" data-search="1106 стройград обычный европейский берег СБ согласование">
+          <td class="num"></td><td><label class="click" for="screen-detail">1106</label></td><td>14.08.2026</td><td>ООО «СтройГрад»</td><td>Обычный</td><td>ЖК Европейский берег</td><td>16.08–01.10</td><td>4</td><td>СБ</td><td><span class="badge warn">На согласовании</span></td>
+        </tr>
+        <tr data-status="execution" data-type="ordinary" data-project="ЖК Сподвижники" data-contractor="ООО «СибМонтаж»" data-route="security" data-search="1101 сибмонтаж обычный сподвижники исполнение">
+          <td class="num"></td><td><label class="click" for="screen-execution">1101</label></td><td>13.08.2026</td><td>ООО «СибМонтаж»</td><td>Обычный</td><td>ЖК Сподвижники</td><td>13.08–15.09</td><td>5</td><td>Исполнение</td><td><span class="badge status-info">На исполнении</span></td>
+        </tr>
+        <tr data-status="processed" data-type="ordinary" data-project="ЖК Расцветай" data-contractor="ООО «ФасадПро»" data-route="security" data-search="1098 фасадпро обычный расцветай обработана">
+          <td class="num"></td><td><label class="click" for="screen-processed">1098</label></td><td>12.08.2026</td><td>ООО «ФасадПро»</td><td>Обычный</td><td>ЖК Расцветай</td><td>12.08–25.09</td><td>2</td><td>—</td><td><span class="badge ok">Обработана</span></td>
+        </tr>
+        <tr data-status="rejected" data-type="ordinary" data-project="ЖК Сподвижники" data-contractor="ООО «СтройГрад»" data-route="security" data-search="1095 стройград обычный сподвижники отказ отклонена">
+          <td class="num"></td><td><label class="click" for="screen-rejected-result">1095</label></td><td>10.08.2026</td><td>ООО «СтройГрад»</td><td>Обычный</td><td>ЖК Сподвижники</td><td>11.08–30.08</td><td>1</td><td>—</td><td><span class="badge bad">Отклонена</span></td>
+        </tr>
+        <tr data-status="execution_error" data-type="ordinary" data-project="ЖК Европейский берег" data-contractor="ООО «СибМонтаж»" data-route="security" data-search="1091 сибмонтаж обычный европейский берег ошибка исполнения">
+          <td class="num"></td><td><label class="click" for="screen-error">1091</label></td><td>09.08.2026</td><td>ООО «СибМонтаж»</td><td>Обычный</td><td>ЖК Европейский берег</td><td>10.08–20.08</td><td>2</td><td>Исполнение</td><td><span class="badge status-error">Ошибка исполнения</span></td>
+        </tr>
+
+        <!-- Разовые заявки других подрядчиков: руководитель площадки -->
+        <tr data-status="approval" data-type="onetime" data-project="ЖК Европейский берег" data-contractor="ООО «СибМонтаж»" data-route="manager" data-search="1105 сибмонтаж разовый европейский берег согласование">
+          <td class="num"></td><td><label class="click" for="screen-onetime">1105</label></td><td>14.08.2026</td><td>ООО «СибМонтаж»</td><td>Разовый</td><td>ЖК Европейский берег</td><td>15.08–15.08</td><td>3</td><td>Рук. площадки</td><td><span class="badge warn">На согласовании</span></td>
+        </tr>
+        <tr data-status="execution" data-type="onetime" data-project="ЖК Расцветай" data-contractor="ООО «ФасадПро»" data-route="manager" data-search="1102 фасадпро разовый расцветай исполнение">
+          <td class="num"></td><td><label class="click" for="screen-execution">1102</label></td><td>13.08.2026</td><td>ООО «ФасадПро»</td><td>Разовый</td><td>ЖК Расцветай</td><td>14.08–14.08</td><td>2</td><td>Исполнение</td><td><span class="badge status-info">На исполнении</span></td>
+        </tr>
+        <tr data-status="processed" data-type="onetime" data-project="ЖК Европейский берег" data-contractor="ООО «СтройГрад»" data-route="manager" data-search="1097 стройград разовый европейский берег обработана">
+          <td class="num"></td><td><label class="click" for="screen-processed">1097</label></td><td>11.08.2026</td><td>ООО «СтройГрад»</td><td>Разовый</td><td>ЖК Европейский берег</td><td>12.08–12.08</td><td>1</td><td>—</td><td><span class="badge ok">Обработана</span></td>
+        </tr>
+        <tr data-status="rejected" data-type="onetime" data-project="ЖК Расцветай" data-contractor="ООО «СибМонтаж»" data-route="manager" data-search="1093 сибмонтаж разовый расцветай отказ отклонена">
+          <td class="num"></td><td><label class="click" for="screen-rejected-result">1093</label></td><td>09.08.2026</td><td>ООО «СибМонтаж»</td><td>Разовый</td><td>ЖК Расцветай</td><td>10.08–10.08</td><td>1</td><td>—</td><td><span class="badge bad">Отклонена</span></td>
+        </tr>
+        <tr data-status="execution_error" data-type="onetime" data-project="ЖК Европейский берег" data-contractor="ООО «ФасадПро»" data-route="manager" data-search="1089 фасадпро разовый европейский берег ошибка исполнения">
+          <td class="num"></td><td><label class="click" for="screen-error">1089</label></td><td>08.08.2026</td><td>ООО «ФасадПро»</td><td>Разовый</td><td>ЖК Европейский берег</td><td>09.08–09.08</td><td>1</td><td>Исполнение</td><td><span class="badge status-error">Ошибка исполнения</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+
+<!-- ПОДРЯДЧИКИ -->
+<main class="screen" id="contractors">
+  <div class="head">
+    <div><h1>Подрядчики</h1></div>
+    <div class="actions security-contractor-action role-hidden"><button class="btn primary" type="button" onclick="openContractorModal()">+ Добавить подрядчика</button></div>
+  </div>
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <input class="filter-input" id="contractorSearch" autocomplete="off" placeholder="Поиск подрядчика" oninput="applyContractorFilters()">
+      <select class="filter-select" id="contractorProject" onchange="applyContractorFilters()">
+        <option value="">Все объекты</option>
+        <option>ЖК Сподвижники</option>
+        <option>ЖК Европейский берег</option>
+        <option>ЖК Расцветай</option>
+      </select>
+      <select class="filter-select" id="contractorStatus" onchange="applyContractorFilters()">
+        <option value="">Все статусы ЛК</option>
+        <option value="active">Активен</option>
+        <option value="inactive">Не активен</option>
+      </select>
+      <button class="btn filter-reset" type="button" onclick="resetContractorFilters()">Сбросить</button>
+    </div>
+    <div class="toolbar-right"><span class="toolbar-count" id="contractorCount">4 подрядчика</span></div>
+  </div>
+  <div class="table">
+    <table id="contractorsTable">
+      <thead><tr>
+        <th class="num">№</th>
+        <th class="sortable" onclick="sortTable('contractorsTable',1,'text',this)">Подрядчик</th>
+        <th class="sortable" onclick="sortTable('contractorsTable',2,'number',this)">ИНН</th>
+        <th class="sortable" onclick="sortTable('contractorsTable',3,'text',this)">Объекты</th>
+        <th>Заявки на согласовании</th>
+        <th>Последняя заявка</th>
+        <th class="sortable" onclick="sortTable('contractorsTable',6,'text',this)">Личный кабинет</th>
+        <th>Действия</th>
+      </tr></thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+
+<!-- ДОБАВЛЕНИЕ ПОДРЯДЧИКА / ЛИЧНЫЙ КАБИНЕТ -->
+<div class="submodal-overlay" id="contractorModal" aria-hidden="true">
+  <div class="submodal-card contractor-modal-card">
+    <div class="modal-head">
+      <div><h2 id="contractorModalTitle">Новый подрядчик</h2><p id="contractorModalSubtitle"></p></div>
+      <button class="modal-close" type="button" onclick="closeContractorModal()">×</button>
+    </div>
+
+    <div class="contractor-form-grid">
+      <div class="form-block">
+        <label for="contractorName">Название организации *</label>
+        <input class="input" id="contractorName" autocomplete="off" placeholder="ООО «Новый подрядчик»">
+      </div>
+      <div class="form-block">
+        <label for="contractorInn">ИНН *</label>
+        <input class="input" id="contractorInn" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="10 или 12 цифр">
+      </div>
+      <div class="form-block full">
+        <label for="contractorLogin">Логин личного кабинета *</label>
+        <input class="input" id="contractorLogin" autocomplete="off" placeholder="user@company.ru">
+      </div>
+      <div class="form-block">
+        <label for="contractorAccountStatus">Статус личного кабинета</label>
+        <select class="input" id="contractorAccountStatus">
+          <option value="active">Активен</option>
+          <option value="inactive">Не активен</option>
+        </select>
+      </div>
+      <div class="form-block full">
+        <label>Доступные объекты</label>
+        <div class="project-checks">
+          <label class="project-check"><input type="checkbox" name="contractorProjectAccess" value="ЖК Сподвижники"> ЖК Сподвижники</label>
+          <label class="project-check"><input type="checkbox" name="contractorProjectAccess" value="ЖК Европейский берег"> ЖК Европейский берег</label>
+          <label class="project-check"><input type="checkbox" name="contractorProjectAccess" value="ЖК Расцветай"> ЖК Расцветай</label>
+        </div>
+      </div>
+      <div class="form-block full">
+        <label for="contractorPassword" id="contractorPasswordLabel">Пароль личного кабинета *</label>
+        <div class="password-row">
+          <input class="input" id="contractorPassword" readonly aria-label="Сгенерированный пароль">
+          <button class="btn" id="generatePasswordBtn" type="button" onclick="generateContractorPassword()">Сгенерировать</button>
+          <button class="btn" id="copyPasswordBtn" type="button" onclick="copyContractorPassword()">Копировать</button>
+        </div>
+        <div class="copy-feedback" id="passwordCopyFeedback"></div>
+        <div class="credential-note">После создания личного кабинета передайте логин и пароль представителю подрядчика. Пароль отображается только в форме создания или смены.</div>
+      </div>
+    </div>
+
+    <div class="contractor-create-result" id="contractorCreateResult"></div>
+    <div class="modal-footer">
+      <button class="btn" type="button" onclick="closeContractorModal()">Отмена</button>
+      <button class="btn primary" id="createContractorBtn" type="button" onclick="createContractorAccount()">Создать подрядчика и ЛК</button>
+    </div>
+  </div>
+</div>
+
+<!-- СОТРУДНИКИ -->
+<main class="screen" id="employees">
+  <div class="head">
+    <div><h1>Сотрудники</h1><div class="sub" id="employeesSubtitle"></div></div>
+    <div class="actions employee-crud"><button class="btn primary" type="button" onclick="openEmployeeRegistryModal()">+ Добавить сотрудника</button></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <input class="filter-input" id="empSearch" autocomplete="off" placeholder="Поиск сотрудника" oninput="applyEmployeeFilters()">
+      <select class="filter-select" id="empContractor" onchange="applyEmployeeFilters()">
+        <option value="">Все организации</option>
+        <option>ООО «МонтажСтрой»</option>
+        <option>ООО «СтройГрад»</option>
+        <option>ООО «СибМонтаж»</option>
+        <option>ООО «ФасадПро»</option>
+      </select>
+      <select class="filter-select" id="empProject" onchange="applyEmployeeFilters()">
+        <option value="">Все объекты</option>
+        <option>ЖК Сподвижники</option>
+        <option>ЖК Европейский берег</option>
+        <option>ЖК Расцветай</option>
+      </select>
+      <select class="filter-select" id="empStatus" onchange="applyEmployeeFilters()">
+        <option value="">Все состояния</option>
+        <option value="active">Действует</option>
+        
+        <option value="expired">Истёк</option>
+        <option value="new">Без пропуска</option>
+      </select>
+      <button class="btn filter-reset" type="button" onclick="resetEmployeeFilters()">Сбросить</button>
+    </div>
+    <div class="toolbar-right"><span class="sub" id="employeeCountLabel">0 сотрудников</span></div>
+  </div>
+
+  <div class="sheet">
+    <table class="form-table" id="employeesTable">
+      <thead><tr>
+        <th class="num">№</th>
+        <th class="sortable" onclick="sortTable('employeesTable',1,'text',this)">ФИО</th>
+        <th class="sortable" onclick="sortTable('employeesTable',2,'text',this)">Должность</th>
+        <th class="sortable" onclick="sortTable('employeesTable',3,'text',this)">Организация</th>
+        <th>ИНН</th>
+        <th class="sortable" onclick="sortTable('employeesTable',5,'text',this)">Объект</th>
+        <th class="sortable" onclick="sortTable('employeesTable',6,'date',this)">Пропуск до</th>
+        <th class="sortable" onclick="sortTable('employeesTable',7,'text',this)">Состояние</th>
+        <th>Действия</th>
+      </tr></thead>
+      <tbody id="employeesTableBody">
+        <tr data-saved="1" data-owner="ООО «МонтажСтрой»" data-project="ЖК Сподвижники" data-status="active">
+          <td class="num"></td><td class="emp-name">Иванов Иван Иванович</td><td class="emp-position">Монтажник</td><td class="emp-owner">ООО «МонтажСтрой»</td><td>5400000000</td><td class="emp-project">ЖК Сподвижники</td><td class="emp-expiry">28.08.2026</td><td><span class="badge ok">Действует</span></td>
+          <td class="action-cell"><button class="mini-action" type="button" title="Редактировать" onclick="editEmployeeRow(this)">Ред.</button><button class="mini-action delete" type="button" title="Удалить" onclick="deleteEmployeeRow(this)">Удал.</button></td>
+        </tr>
+        <tr data-saved="1" data-owner="ООО «МонтажСтрой»" data-project="ЖК Сподвижники" data-status="active">
+          <td class="num"></td><td class="emp-name">Петров Петр Петрович</td><td class="emp-position">Электрик</td><td class="emp-owner">ООО «МонтажСтрой»</td><td>5400000000</td><td class="emp-project">ЖК Сподвижники</td><td class="emp-expiry">30.09.2026</td><td><span class="badge ok">Действует</span></td>
+          <td class="action-cell"><button class="mini-action" type="button" title="Редактировать" onclick="editEmployeeRow(this)">Ред.</button><button class="mini-action delete" type="button" title="Удалить" onclick="deleteEmployeeRow(this)">Удал.</button></td>
+        </tr>
+        <tr data-saved="1" data-owner="ООО «МонтажСтрой»" data-project="ЖК Европейский берег" data-status="active" data-manager="1">
+          <td class="num"></td><td class="emp-name">Сидоров Алексей Олегович</td><td class="emp-position">Прораб</td><td class="emp-owner">ООО «МонтажСтрой»</td><td>5400000000</td><td class="emp-project">ЖК Европейский берег</td><td class="emp-expiry">15.10.2026</td><td><span class="badge ok">Действует</span></td>
+          <td class="action-cell"><button class="mini-action" type="button" title="Редактировать" onclick="editEmployeeRow(this)">Ред.</button><button class="mini-action delete" type="button" title="Удалить" onclick="deleteEmployeeRow(this)">Удал.</button></td>
+        </tr>
+
+        <tr data-saved="1" data-owner="ООО «СтройГрад»" data-project="ЖК Европейский берег" data-status="active" data-manager="1">
+          <td class="num"></td><td class="emp-name">Кузнецов Максим Олегович</td><td class="emp-position">Арматурщик</td><td class="emp-owner">ООО «СтройГрад»</td><td>5401000001</td><td class="emp-project">ЖК Европейский берег</td><td class="emp-expiry">05.10.2026</td><td><span class="badge ok">Действует</span></td>
+          <td class="action-cell"><button class="mini-action" type="button" title="Редактировать" onclick="editEmployeeRow(this)">Ред.</button><button class="mini-action delete" type="button" title="Удалить" onclick="deleteEmployeeRow(this)">Удал.</button></td>
+        </tr>
+        <tr data-saved="1" data-owner="ООО «СтройГрад»" data-project="ЖК Сподвижники" data-status="expired">
+          <td class="num"></td><td class="emp-name">Морозов Сергей Ильич</td><td class="emp-position">Бетонщик</td><td class="emp-owner">ООО «СтройГрад»</td><td>5401000001</td><td class="emp-project">ЖК Сподвижники</td><td class="emp-expiry">10.08.2026</td><td><span class="badge bad">Истёк</span></td>
+          <td class="action-cell"><button class="mini-action" type="button" title="Редактировать" onclick="editEmployeeRow(this)">Ред.</button><button class="mini-action delete" type="button" title="Удалить" onclick="deleteEmployeeRow(this)">Удал.</button></td>
+        </tr>
+
+        <tr data-saved="1" data-owner="ООО «СибМонтаж»" data-project="ЖК Европейский берег" data-status="active" data-manager="1">
+          <td class="num"></td><td class="emp-name">Орлов Андрей Павлович</td><td class="emp-position">Сварщик</td><td class="emp-owner">ООО «СибМонтаж»</td><td>5402000002</td><td class="emp-project">ЖК Европейский берег</td><td class="emp-expiry">20.08.2026</td><td><span class="badge ok">Действует</span></td>
+          <td class="action-cell"><button class="mini-action" type="button" title="Редактировать" onclick="editEmployeeRow(this)">Ред.</button><button class="mini-action delete" type="button" title="Удалить" onclick="deleteEmployeeRow(this)">Удал.</button></td>
+        </tr>
+        <tr data-saved="1" data-owner="ООО «СибМонтаж»" data-project="ЖК Расцветай" data-status="active" data-manager="1">
+          <td class="num"></td><td class="emp-name">Егоров Роман Денисович</td><td class="emp-position">Монтажник</td><td class="emp-owner">ООО «СибМонтаж»</td><td>5402000002</td><td class="emp-project">ЖК Расцветай</td><td class="emp-expiry">01.10.2026</td><td><span class="badge ok">Действует</span></td>
+          <td class="action-cell"><button class="mini-action" type="button" title="Редактировать" onclick="editEmployeeRow(this)">Ред.</button><button class="mini-action delete" type="button" title="Удалить" onclick="deleteEmployeeRow(this)">Удал.</button></td>
+        </tr>
+
+        <tr data-saved="1" data-owner="ООО «ФасадПро»" data-project="ЖК Расцветай" data-status="active" data-manager="1">
+          <td class="num"></td><td class="emp-name">Волков Никита Артемович</td><td class="emp-position">Фасадчик</td><td class="emp-owner">ООО «ФасадПро»</td><td>5403000003</td><td class="emp-project">ЖК Расцветай</td><td class="emp-expiry">12.09.2026</td><td><span class="badge ok">Действует</span></td>
+          <td class="action-cell"><button class="mini-action" type="button" title="Редактировать" onclick="editEmployeeRow(this)">Ред.</button><button class="mini-action delete" type="button" title="Удалить" onclick="deleteEmployeeRow(this)">Удал.</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="privacy-note"><strong>Паспортные данные:</strong> в общем реестре не показываются. В заявке отображаются маскированно; полный номер раскрывается отдельным действием. Правила доступа по ролям нужно подтвердить.</div>
+  <div class="crud-note employee-crud">Подрядчик редактирует сотрудников своей организации. Администратор — всех сотрудников.</div>
+  <div class="readonly-note" id="employeeReadonlyNote">В этой роли сотрудники доступны для просмотра, поиска, фильтрации и сортировки.</div>
+</main>
+
+
+<!-- ДОБАВЛЕНИЕ СОТРУДНИКА — ОДНО МОДАЛЬНОЕ ОКНО -->
+<div class="submodal-overlay" id="employeeRegistryModal" aria-hidden="true">
+  <div class="submodal-card employee-registry-modal-card">
+    <div class="modal-head">
+      <div><h2 id="employeeRegistryModalTitle">Новый сотрудник</h2></div>
+      <button class="modal-close" type="button" onclick="closeEmployeeRegistryModal()">×</button>
+    </div>
+    <div class="modal-form-grid">
+      <label><span>ФИО *</span><input class="input" id="registryEmpName" placeholder="Фамилия Имя Отчество"></label>
+      <label><span>Должность</span><input class="input" id="registryEmpPosition" placeholder="Должность"></label>
+      <label><span>Телефон</span><input class="input" id="registryEmpPhone" placeholder="+7 …"></label>
+      <label><span>Объект</span><select class="input" id="registryEmpProject"><option>ЖК Сподвижники</option><option>ЖК Европейский берег</option><option>ЖК Расцветай</option></select></label>
+      <div class="passport-field-pair">
+        <label><span>Серия паспорта</span><input class="input passport-input" id="registryEmpPassportSeries" inputmode="numeric" maxlength="4" placeholder="4 цифры"></label>
+        <label><span>Номер паспорта</span><input class="input passport-input" id="registryEmpPassportNumber" inputmode="numeric" maxlength="6" placeholder="6 цифр"></label>
+      </div>
+      <label class="employee-edit-only"><span>Пропуск до</span><input class="input" id="registryEmpExpiry" type="date"></label>
+      <label class="employee-edit-only"><span>Состояние</span><select class="input" id="registryEmpStatus"><option value="active">Действует</option><option value="expired">Истёк</option><option value="new">Без пропуска</option></select></label>
+    </div>
+    <div class="validation-message" id="registryEmployeeValidation"></div>
+    <div class="modal-footer">
+      <button class="btn" type="button" onclick="closeEmployeeRegistryModal()">Отмена</button>
+      <button class="btn primary" id="saveEmployeeRegistryBtn" type="button" onclick="saveEmployeeRegistryModal()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- НОВАЯ ЗАЯВКА — МОДАЛЬНОЕ ОКНО -->
+  <main id="new-request" class="request-modal-overlay" aria-hidden="true">
+    <div class="request-modal-card">
+      <div class="modal-head">
+        <div><h1>Новая заявка</h1><p>ООО «МонтажСтрой»</p></div>
+        <button class="modal-close" type="button" aria-label="Закрыть" onclick="closeRequestModal()">×</button>
+      </div>
+
+      <div class="section-title">Параметры пропуска</div>
+      <div class="table">
+        <table class="form-table request-params">
+          <tbody>
+            <tr>
+              <td class="form-label">Тип пропуска</td>
+              <td><div class="type-switch"><label for="type-ordinary" onclick="setTimeout(updatePassTypeHint,0)">Обычный</label><label for="type-onetime" onclick="setTimeout(updatePassTypeHint,0)">Разовый</label></div></td>
+              <td class="form-label">Объект</td>
+              <td><select id="requestProject"><option value="">Выберите объект</option></select></td>
+            </tr>
+            <tr>
+              <td class="form-label">Дата начала</td><td><input id="requestStartDate" type="date" value="2026-08-15"></td>
+              <td class="form-label">Дата окончания</td><td><input id="requestEndDate" type="date" value="2026-09-15"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="date-rule ordinary-inline">Для обычного пропуска указывается период доступа.</div>
+      <div class="date-rule onetime-inline">Для разового пропуска укажите даты начала и окончания.</div>
+
+      <div class="section-title" style="margin-top:12px"><span>Сотрудники в заявке</span></div>
+      <div class="table">
+        <table class="form-table request-employees-table">
+          <thead><tr><th class="num">№</th><th>ФИО</th><th>Должность</th><th>Телефон</th><th>Паспорт</th><th>Источник</th><th>Действия</th></tr></thead>
+          <tbody id="requestEmployeesBody">
+            <tr data-saved="1" data-passport="50 12 123456">
+              <td class="num">1</td><td class="emp-name">Иванов Иван Иванович</td><td class="emp-position">Монтажник</td><td class="emp-phone">+7 999 123-45-67</td>
+              <td class="emp-passport"><span class="passport-value">50 12 ••••••</span> <button class="passport-toggle" type="button" onclick="togglePassport(this)">Показать</button></td>
+              <td><span class="badge ok">Из списка</span></td>
+              <td class="action-cell"><button class="mini-action delete" type="button" onclick="removeRequestEmployee(this)">Удал.</button></td>
+            </tr>
+            <tr data-saved="1" data-passport="50 14 654321">
+              <td class="num">2</td><td class="emp-name">Петров Петр Петрович</td><td class="emp-position">Электрик</td><td class="emp-phone">+7 999 765-43-21</td>
+              <td class="emp-passport"><span class="passport-value">50 14 ••••••</span> <button class="passport-toggle" type="button" onclick="togglePassport(this)">Показать</button></td>
+              <td><span class="badge ok">Из списка</span></td>
+              <td class="action-cell"><button class="mini-action delete" type="button" onclick="removeRequestEmployee(this)">Удал.</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="employee-bottom-actions">
+        <button class="btn" type="button" onclick="openEmployeeChoice()">+ Добавить сотрудника</button>
+        <span id="requestEmployeeCountV8">2 сотрудника</span>
+      </div>
+      <div class="inline-employee-editor" id="requestEmployeeEditor">
+        <div class="inline-editor-head">
+          <div class="inline-editor-tabs">
+            <button class="inline-editor-tab active" id="inlineExistingTab" type="button" onclick="showExistingEmployeePicker()">Из списка</button>
+            <button class="inline-editor-tab" id="inlineNewTab" type="button" onclick="showNewEmployeeModal()">Новый сотрудник</button>
+          </div>
+          <button class="modal-close inline-close" type="button" aria-label="Закрыть" onclick="closeEmployeeSubmodals()">×</button>
+        </div>
+        <div class="inline-editor-panel active" id="inlineExistingPanel">
+          <div class="inline-search-row">
+            <input class="filter-input" id="inlineEmployeeSearch" placeholder="Поиск сотрудника" oninput="filterInlineEmployeeList()">
+          </div>
+          <div class="picker-list-v8" id="inlineExistingList"></div>
+          <div class="inline-editor-actions">
+            <button class="btn primary" type="button" onclick="addSelectedExistingEmployees()">Добавить выбранных</button>
+          </div>
+        </div>
+        <div class="inline-editor-panel" id="inlineNewPanel">
+          <div class="modal-form-grid">
+            <label><span>ФИО *</span><input class="input" id="newEmpName" placeholder="Фамилия Имя Отчество"></label>
+            <label><span>Должность</span><input class="input" id="newEmpPosition" placeholder="Должность"></label>
+            <label><span>Телефон</span><input class="input" id="newEmpPhone" placeholder="+7 …"></label>
+            <div class="passport-field-pair">
+              <label><span>Серия паспорта</span><input class="input passport-input" id="newEmpPassportSeries" inputmode="numeric" maxlength="4" placeholder="4 цифры"></label>
+              <label><span>Номер паспорта</span><input class="input passport-input" id="newEmpPassportNumber" inputmode="numeric" maxlength="6" placeholder="6 цифр"></label>
+            </div>
+          </div>
+          <div class="validation-message" id="inlineEmployeeValidation"></div>
+          <div class="inline-editor-actions">
+            <button class="btn primary" type="button" onclick="createNewEmployeeFromModal()">Создать и добавить</button>
+          </div>
+        </div>
+      </div>
+      <div class="privacy-note compact"><strong>Паспорт:</strong> маскируется по умолчанию. Полный номер раскрывается только по действию пользователя; финальные права просмотра требуют согласования.</div>
+
+      <div class="validation-message" id="requestValidationMessage"></div>
+
+      <div class="modal-footer">
+        <button class="btn" type="button" onclick="closeRequestModal()">Отмена</button>
+        <button class="btn primary ordinary-inline" type="button" onclick="submitRequestDemo('ordinary')">Отправить в СБ</button>
+        <button class="btn primary onetime-inline" type="button" onclick="submitRequestDemo('onetime')">Отправить руководителю площадки</button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ОБЫЧНАЯ ЗАЯВКА -->
+  <main class="screen" id="request-detail">
+    <div class="head">
+      <div><h1>Заявка №1042</h1><p>Обычный пропуск · ЖК Сподвижники</p></div>
+      <div class="actions"><label class="btn" for="screen-requests">← К списку</label></div>
+    </div>
+    <div class="detail">
+      <div class="k">Подрядчик</div><div>ООО «МонтажСтрой»</div>
+      <div class="k">Период</div><div>15.08.2026 — 30.09.2026</div>
+      <div class="k">Статус</div><div><span class="badge warn">На согласовании</span></div>
+    </div>
+    <div class="table">
+      <table><thead><tr><th>ФИО</th><th>Должность</th></tr></thead>
+      <tbody><tr><td>Иванов Иван Иванович</td><td>Монтажник</td><td>Из списка</td><td>—</td></tr><tr><td>Петров Петр Петрович</td><td>Электрик</td><td>Из списка</td><td>—</td></tr></tbody></table>
+    </div>
+    <div class="actions ordinary-decision" style="justify-content:flex-end;margin-top:14px">
+      <button class="btn bad" type="button" onclick="beginReject()">Отклонить</button>
+      <button class="btn ok" type="button" onclick="approveCurrentRequest()">Согласовать</button>
+    </div>
+  </main>
+
+  <!-- РАЗОВАЯ ЗАЯВКА -->
+  <main class="screen" id="one-time">
+    <div class="head">
+      <div><h1>Заявка №1041</h1><p>Разовый пропуск · ЖК Европейский берег</p></div>
+      <div class="actions"><label class="btn" for="screen-requests">← К списку</label></div>
+    </div>
+    <div class="detail">
+      <div class="k">Подрядчик</div><div>ООО «МонтажСтрой»</div>
+      <div class="k">Период</div><div>14.08.2026 — 14.08.2026</div>
+      <div class="k">Статус</div><div><span class="badge warn">На согласовании</span></div>
+    </div>
+    <div class="table">
+      <table><thead><tr><th>ФИО</th><th>Должность</th></tr></thead>
+      <tbody><tr><td>Петров Петр Петрович</td><td>Электрик</td><td>Из списка</td><td>—</td></tr></tbody></table>
+    </div>
+    <div class="actions onetime-decision" style="justify-content:flex-end;margin-top:14px">
+      <button class="btn bad" type="button" onclick="beginReject()">Отклонить</button>
+      <button class="btn ok" type="button" onclick="approveCurrentRequest()">Согласовать</button>
+    </div>
+  </main>
+
+
+  <!-- ОТКЛОНЕННАЯ ЗАЯВКА -->
+  <main class="screen" id="rejected-result">
+    <div class="head">
+      <div><h1>Заявка отклонена</h1></div>
+      <div class="actions"><label class="btn" for="screen-requests">← К заявкам</label></div>
+    </div>
+    <div class="detail">
+      <div class="k">Подрядчик</div><div>ООО «МонтажСтрой»</div>
+      <div class="k">Тип пропуска</div><div>Обычный</div>
+      <div class="k">Объект</div><div>ЖК Расцветай</div>
+      <div class="k">Период</div><div>12.08.2026 — 31.08.2026</div>
+      <div class="k">Статус</div><div><span class="badge bad">Отклонена</span></div>
+      <div class="k">Комментарий</div><div>Необходимо уточнить паспортные данные сотрудника.</div>
+    </div>
+    <div class="table rejected-employees-table">
+      <table><thead><tr><th>ФИО</th><th>Должность</th></tr></thead><tbody></tbody></table>
+    </div>
+  </main>
+
+  <!-- НА ИСПОЛНЕНИИ -->
+  <main class="screen" id="execution">
+    <div class="head">
+      <div><h1>Заявка на исполнении</h1><p>Заявка согласована и передана на исполнение.</p></div>
+      <div class="actions"><label class="btn" for="screen-requests">← К заявкам</label></div>
+    </div>
+    <div class="table">
+      <table><thead><tr><th>ФИО</th><th>Статус</th></tr></thead>
+      <tbody>
+        <tr><td>Иванов Иван Иванович</td><td>Продление пропуска</td><td><span class="badge status-info">Выполняется</span></td></tr>
+        <tr><td>Петров Петр Петрович</td><td>Создание доступа</td><td><span class="badge status-info">В очереди</span></td></tr>
+      </tbody></table>
+    </div>
+  </main>
+
+  <!-- ОШИБКА ИСПОЛНЕНИЯ -->
+  <main class="screen" id="execution-error">
+    <div class="head">
+      <div><h1>Ошибка исполнения</h1></div>
+      <div class="actions"><label class="btn" for="screen-requests">← К заявкам</label></div>
+    </div>
+    <div class="table">
+      <table><thead><tr><th>ФИО</th><th>Результат</th></tr></thead>
+      <tbody><tr><td>Орлов Андрей Павлович</td><td>Создание доступа</td><td><span class="badge status-error">Ошибка исполнения</span></td></tr></tbody></table>
+    </div>
+    
+    <div class="actions execution-retry" style="justify-content:flex-end;margin-top:12px"><button class="btn primary" type="button" onclick="retryExecution()">Повторить</button></div>
+  </main>
+
+  <!-- ОТКЛОНЕНИЕ -->
+  <main class="screen" id="reject">
+    <div class="modal-card">
+      <h1>Отклонить заявку</h1>
+      <p style="margin-bottom:14px">Комментарий обязателен и будет показан подрядчику.</p>
+      <textarea class="input" id="rejectComment" style="width:100%;min-height:90px;resize:vertical" placeholder="Укажите причину отказа"></textarea>
+      <div class="actions" style="justify-content:flex-end;margin-top:14px">
+        <button class="btn" type="button" onclick="cancelReject()">Отмена</button>
+        <button class="btn bad" type="button" onclick="confirmReject()">Подтвердить отказ</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- УСПЕХ -->
+  <main class="screen" id="processed">
+    <div class="head">
+      <div><h1>Заявка обработана</h1></div>
+      <div class="actions"><label class="btn" for="screen-requests">← К заявкам</label></div>
+    </div>
+    <div class="table">
+      <table><thead><tr><th>ФИО</th><th>Доступ до</th></tr></thead>
+      <tbody><tr><td>Иванов Иван Иванович</td><td><span class="badge ok">Успех</span></td><td>30.09.2026</td></tr></tbody></table>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  const PROJECTS = ['ЖК Сподвижники','ЖК Европейский берег','ЖК Расцветай'];
+
+  let currentRole='contractor';
+
+  function visibleRows(tbody){
+    return [...tbody.querySelectorAll('tr')].filter(r=>getComputedStyle(r).display!=='none');
+  }
+
+  window.sortTable=function(tableId,col,type,th){
+    const table=document.getElementById(tableId); if(!table) return;
+    const tbody=table.tBodies[0]; if(!tbody) return;
+    const dir=th.dataset.dir==='asc'?'desc':'asc';
+    table.querySelectorAll('th.sortable').forEach(x=>x.removeAttribute('data-dir'));
+    th.dataset.dir=dir;
+    const rows=[...tbody.rows];
+    const parse=v=>{
+      v=v.trim();
+      if(type==='number') return Number(v.replace(/[^\d.-]/g,''))||0;
+      if(type==='date'){
+        const m=v.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+        return m ? new Date(+m[3],+m[2]-1,+m[1]).getTime() : 0;
+      }
+      return v.toLocaleLowerCase('ru');
+    };
+    rows.sort((a,b)=>{
+      const av=parse(a.cells[col]?.textContent||''), bv=parse(b.cells[col]?.textContent||'');
+      const cmp=typeof av==='number' ? av-bv : String(av).localeCompare(String(bv),'ru');
+      return dir==='asc'?cmp:-cmp;
+    });
+    rows.forEach(r=>tbody.appendChild(r));
+    renumber(tbody);
+  };
+
+  function updateEmployeeDataset(tr){
+    if(!tr)return;
+    const name=(tr.querySelector('.emp-name')?.textContent||tr.querySelector('.emp-name-input')?.value||'').trim();
+    const pos=(tr.querySelector('.emp-position')?.textContent||tr.querySelector('.emp-position-input')?.value||'').trim();
+    const owner=(tr.querySelector('.emp-owner')?.textContent||tr.dataset.owner||'ООО «МонтажСтрой»').trim();
+    const proj=(tr.querySelector('.emp-project')?.textContent||tr.querySelector('.emp-project-input')?.value||'').trim();
+    const stateText=(tr.cells[7]?.innerText||tr.cells[7]?.textContent||'').trim();
+    tr.dataset.owner=owner;
+    tr.dataset.project=proj;
+    if(!tr.dataset.status){
+      const norm=normalizeText(stateText);
+      tr.dataset.status=norm.includes('истек')?'expired':'active';
+    }
+    tr.dataset.search=normalizeText(name+' '+pos+' '+owner+' '+proj+' '+stateText);
+  }
+
+
+  function normalizeText(value){
+    return String(value ?? '')
+      .toLocaleLowerCase('ru-RU')
+      .replace(/ё/g,'е')
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+
+  function rowSearchText(row){
+    const cells=[...row.cells].map(c=>c.innerText || c.textContent || '').join(' ');
+    return normalizeText((row.dataset.search||'')+' '+cells);
+  }
+
+  window.resetRequestFilters=function(){
+    ['reqSearch','reqStatus','reqType','reqProject','reqContractor'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(!el)return;
+      if(el.tagName==='SELECT')el.selectedIndex=0; else el.value='';
+    });
+    applyRequestFilters();
+  };
+
+  window.resetEmployeeFilters=function(){
+    ['empSearch','empContractor','empProject','empStatus'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(!el)return;
+      if(el.tagName==='SELECT')el.selectedIndex=0; else el.value='';
+    });
+    applyEmployeeFilters();
+  };
+
+  window.applyRequestFilters=function(){
+    const search=normalizeText(document.getElementById('reqSearch')?.value||'');
+    const status=document.getElementById('reqStatus')?.value||'';
+    const type=document.getElementById('reqType')?.value||'';
+    const project=document.getElementById('reqProject')?.value||'';
+    const contractor=document.getElementById('reqContractor')?.value||'';
+    const rows=[...document.querySelectorAll('#requestsTable tbody tr')];
+    let shown=0;
+
+    rows.forEach(row=>{
+      const owner=row.dataset.contractor||'';
+      const route=row.dataset.route||'';
+      let roleOk=false;
+      if(currentRole==='contractor') roleOk=owner==='ООО «МонтажСтрой»';
+      else if(currentRole==='security') roleOk=route==='security';
+      else if(currentRole==='manager') roleOk=route==='manager';
+      else if(currentRole==='admin') roleOk=true;
+
+      const searchOk=!search || rowSearchText(row).includes(search);
+      const statusOk=!status || row.dataset.status===status;
+      const typeOk=!type || row.dataset.type===type;
+      const projectOk=!project || row.dataset.project===project;
+      const contractorOk=!contractor || owner===contractor;
+      const visible=roleOk && searchOk && statusOk && typeOk && projectOk && contractorOk;
+
+      row.hidden=!visible;
+      row.style.display=visible?'':'none';
+      if(visible)shown++;
+    });
+
+    const count=document.getElementById('requestCount');
+    if(count)count.textContent=shown+' '+(shown===1?'заявка':shown>=2&&shown<=4?'заявки':'заявок');
+    const tbody=document.querySelector('#requestsTable tbody');
+    if(tbody)renumber(tbody);
+  };
+
+  window.applyEmployeeFilters=function(){
+    const search=normalizeText(document.getElementById('empSearch')?.value||'');
+    const contractor=document.getElementById('empContractor')?.value||'';
+    const project=document.getElementById('empProject')?.value||'';
+    const status=document.getElementById('empStatus')?.value||'';
+    const rows=[...document.querySelectorAll('#employeesTableBody tr')];
+    let shown=0;
+
+    rows.forEach(row=>{
+      updateEmployeeDataset(row);
+      const owner=row.dataset.owner||'';
+      const editing=row.dataset.saved==='0' || row.dataset.editing==='1';
+
+      let roleOk=false;
+      if(currentRole==='contractor') roleOk=owner==='ООО «МонтажСтрой»';
+      else if(currentRole==='security') roleOk=true;
+      else if(currentRole==='manager') roleOk=row.dataset.manager==='1';
+      else if(currentRole==='admin') roleOk=true;
+
+      const searchOk=!search || rowSearchText(row).includes(search);
+      const contractorOk=!contractor || owner===contractor;
+      const projectOk=!project || row.dataset.project===project;
+      const statusOk=!status || row.dataset.status===status;
+      const visible=roleOk && (editing || (searchOk && contractorOk && projectOk && statusOk));
+
+      row.hidden=!visible;
+      row.style.display=visible?'':'none';
+      if(visible)shown++;
+    });
+
+    const count=document.getElementById('employeeCountLabel');
+    if(count)count.textContent=shown+' '+(shown===1?'сотрудник':shown>=2&&shown<=4?'сотрудника':'сотрудников');
+    const tbody=document.getElementById('employeesTableBody');
+    if(tbody)renumber(tbody);
+  };
+
+
+  function setCrudEnabled(enabled){
+    document.querySelectorAll('.employee-crud').forEach(el=>el.classList.toggle('role-hidden',!enabled));
+    document.querySelectorAll('#employeesTableBody tr').forEach(row=>{
+      const action=row.querySelector('.action-cell');
+      if(!action)return;
+      const owner=row.dataset.owner||row.querySelector('.emp-owner')?.textContent.trim()||'';
+      const canEdit=currentRole==='admin' || (currentRole==='contractor' && owner==='ООО «МонтажСтрой»');
+      action.classList.toggle('role-hidden',!canEdit);
+    });
+    const note=document.getElementById('employeeReadonlyNote');
+    if(note)note.style.display=(currentRole==='security'||currentRole==='manager')?'block':'none';
+  }
+
+  function setDecisionVisibility(){
+    const ordinaryAllowed=currentRole==='security'||currentRole==='admin';
+    const onetimeAllowed=currentRole==='manager'||currentRole==='admin';
+    document.querySelectorAll('.ordinary-decision').forEach(el=>el.classList.toggle('role-hidden',!ordinaryAllowed));
+    document.querySelectorAll('.onetime-decision').forEach(el=>el.classList.toggle('role-hidden',!onetimeAllowed));
+  }
+
+  window.setRole=function(role){
+    currentRole=role;
+    const contractorLike=role==='contractor'||role==='admin';
+
+    document.querySelectorAll('.role-contractor-action').forEach(el=>el.classList.toggle('role-hidden',!contractorLike));
+    document.querySelectorAll('.employees-tab').forEach(el=>el.classList.remove('role-hidden'));
+
+    const title=document.getElementById('roleTitle');
+    const desc=document.getElementById('roleDescription');
+    const c1=document.getElementById('cap1'),c2=document.getElementById('cap2'),c3=document.getElementById('cap3');
+    const reqSub=document.getElementById('requestsSubtitle');
+    const empSub=document.getElementById('employeesSubtitle');
+
+    if(role==='contractor'){
+      title.textContent='Подрядчик';
+      desc.textContent='Работа со своей организацией';
+      c1.textContent='Создание заявок';c2.textContent='Сотрудники: CRUD';c3.textContent='Все свои статусы';
+      reqSub.textContent='Заявки вашей организации.';
+      empSub.textContent='';
+    }else if(role==='security'){
+      title.textContent='СБ';
+      desc.textContent='Обычные пропуска всех подрядчиков';
+      c1.textContent='Согласовать / отклонить';c2.textContent='Сотрудники: просмотр';c3.textContent='Контроль исполнения';
+      reqSub.textContent='Обычные заявки подрядчиков.';
+      empSub.textContent='';
+    }else if(role==='manager'){
+      title.textContent='Руководитель стройплощадки';
+      desc.textContent='Разовые пропуска';
+      c1.textContent='Согласовать / отклонить';c2.textContent='Сотрудники площадок';c3.textContent='Контроль результата';
+      reqSub.textContent='Разовые заявки, направленные руководителю стройплощадки.';
+      empSub.textContent='';
+    }else{
+      title.textContent='Администратор';
+      desc.textContent='Объединённый контур Подрядчика и СБ';
+      c1.textContent='Все заявки';c2.textContent='Сотрудники: CRUD';c3.textContent='Все согласования';
+      reqSub.textContent='Все заявки всех типов и подрядчиков.';
+      empSub.textContent='Все сотрудники подрядчиков с возможностью редактирования.';
+    }
+
+    setCrudEnabled(contractorLike);
+    setDecisionVisibility();
+
+    document.querySelectorAll('.execution-retry').forEach(el=>{
+      el.classList.toggle('role-hidden',role==='contractor');
+    });
+
+    const activeNew=document.getElementById('screen-new')?.checked;
+    if(activeNew&&!contractorLike){
+      const req=document.getElementById('screen-requests');if(req)req.checked=true;
+    }
+
+    applyRequestFilters();
+    applyEmployeeFilters();
+  };
+
+
+  function renumber(tbody){
+    if(!tbody) return;
+    [...tbody.querySelectorAll('tr')].filter(r => !r.hidden && getComputedStyle(r).display !== 'none').forEach((r,i)=>{
+      const n = r.querySelector('.num');
+      if(n) n.textContent = i+1;
+    });
+    const label=document.getElementById('employeeCountLabel');
+    if(label && tbody.id==='employeesTableBody' && !document.getElementById('empSearch')) label.textContent = visibleRows(tbody).length + ' сотрудников';
+    const requestLabel=document.getElementById('requestEmployeeCount');
+    if(requestLabel && tbody.id==='requestEmployeesBody') requestLabel.innerHTML='Сотрудников в заявке: <strong>'+tbody.querySelectorAll('tr').length+'</strong>';
+  }
+
+  window.addEmployeeRow=function(tbodyId){
+    const tbody=document.getElementById(tbodyId);
+    if(!tbody) return;
+    const tr=document.createElement('tr');
+    tr.className='unsaved-row';
+    tr.dataset.saved='0';
+    tr.dataset.owner='ООО «МонтажСтрой»';
+    tr.innerHTML=`
+      <td class="num"></td>
+      <td><input class="row-edit-input emp-name-input" placeholder="Фамилия Имя Отчество"></td>
+      <td><input class="row-edit-input emp-position-input" placeholder="Должность"></td>
+      <td>ООО «МонтажСтрой»</td>
+      <td>5400000000</td>
+      <td><select class="row-edit-select emp-project-input">${PROJECTS.map(p=>`<option>${p}</option>`).join('')}</select></td>
+      <td><input class="row-edit-input emp-expiry-input" type="date"></td>
+      <td><span class="badge">Новый</span></td>
+      <td class="action-cell"><button class="btn small ok employee-action" type="button" onclick="saveEmployeeRow(this)">Сохранить</button><button class="btn small" type="button" onclick="cancelNewEmployeeRow(this)">Отмена</button></td>`;
+    tbody.appendChild(tr); renumber(tbody);
+    tr.querySelector('.emp-name-input').focus();
+  };
+
+  window.saveEmployeeRow=function(btn){
+    const tr=btn.closest('tr');
+    const name=tr.querySelector('.emp-name-input')?.value.trim();
+    if(!name){ alert('Заполните ФИО сотрудника'); return; }
+    const pos=tr.querySelector('.emp-position-input')?.value.trim()||'—';
+    const proj=tr.querySelector('.emp-project-input')?.value||'—';
+    const exp=tr.querySelector('.emp-expiry-input')?.value||'';
+    const expText=exp ? exp.split('-').reverse().join('.') : '—';
+    tr.dataset.saved='1'; tr.className='saved-flash';
+    tr.innerHTML=`
+      <td class="num"></td><td class="emp-name">${escapeHtml(name)}</td><td class="emp-position">${escapeHtml(pos)}</td>
+      <td class="emp-owner">ООО «МонтажСтрой»</td><td>5400000000</td><td class="emp-project">${escapeHtml(proj)}</td>
+      <td class="emp-expiry">${escapeHtml(expText)}</td><td><span class="badge ok">Сохранён</span></td>
+      <td class="action-cell"><button class="mini-action" type="button" title="Редактировать" onclick="editEmployeeRow(this)">Ред.</button><button class="mini-action delete" type="button" title="Удалить" onclick="deleteEmployeeRow(this)">Удал.</button></td>`;
+    updateEmployeeDataset(tr); renumber(tr.parentElement); applyEmployeeFilters();
+  };
+
+  window.cancelNewEmployeeRow=function(btn){ const tbody=btn.closest('tbody'); btn.closest('tr').remove(); renumber(tbody); applyEmployeeFilters(); };
+
+  window.editEmployeeRow=function(btn){
+    const tr=btn.closest('tr');
+    if(tr.dataset.editing==='1') return;
+    tr.dataset.editing='1';
+    tr.dataset.original=JSON.stringify({
+      name:tr.querySelector('.emp-name')?.textContent||'',
+      pos:tr.querySelector('.emp-position')?.textContent||'',
+      project:tr.querySelector('.emp-project')?.textContent||'',
+      expiry:tr.querySelector('.emp-expiry')?.textContent||''
+    });
+    const d=JSON.parse(tr.dataset.original);
+    tr.querySelector('.emp-name').innerHTML=`<input class="row-edit-input emp-name-input" value="${attr(d.name)}">`;
+    tr.querySelector('.emp-position').innerHTML=`<input class="row-edit-input emp-position-input" value="${attr(d.pos)}">`;
+    tr.querySelector('.emp-project').innerHTML=`<select class="row-edit-select emp-project-input">${PROJECTS.map(p=>`<option ${p===d.project?'selected':''}>${p}</option>`).join('')}</select>`;
+    const iso=/^\d{2}\.\d{2}\.\d{4}$/.test(d.expiry)?d.expiry.split('.').reverse().join('-'):'';
+    tr.querySelector('.emp-expiry').innerHTML=`<input class="row-edit-input emp-expiry-input" type="date" value="${iso}">`;
+    tr.querySelector('.action-cell').innerHTML=`<button class="btn small ok employee-action" type="button" onclick="saveEmployeeEdit(this)">Сохранить</button><button class="btn small" type="button" onclick="cancelEmployeeEdit(this)">Отмена</button>`;
+  };
+
+  window.saveEmployeeEdit=function(btn){
+    const tr=btn.closest('tr');
+    const name=tr.querySelector('.emp-name-input').value.trim();
+    if(!name){ alert('Заполните ФИО сотрудника'); return; }
+    const pos=tr.querySelector('.emp-position-input').value.trim()||'—';
+    const proj=tr.querySelector('.emp-project-input').value;
+    const iso=tr.querySelector('.emp-expiry-input').value;
+    const exp=iso?iso.split('-').reverse().join('.'):'—';
+    tr.dataset.editing='0';
+    tr.querySelector('.emp-name').textContent=name;
+    tr.querySelector('.emp-position').textContent=pos;
+    tr.querySelector('.emp-project').textContent=proj;
+    tr.querySelector('.emp-expiry').textContent=exp;
+    tr.querySelector('.action-cell').innerHTML=`<button class="mini-action" type="button" title="Редактировать" onclick="editEmployeeRow(this)">Ред.</button><button class="mini-action delete" type="button" title="Удалить" onclick="deleteEmployeeRow(this)">Удал.</button>`;
+    updateEmployeeDataset(tr); applyEmployeeFilters();
+  };
+
+  window.cancelEmployeeEdit=function(btn){
+    const tr=btn.closest('tr'), d=JSON.parse(tr.dataset.original||'{}');
+    tr.dataset.editing='0';
+    tr.querySelector('.emp-name').textContent=d.name||'';
+    tr.querySelector('.emp-position').textContent=d.pos||'';
+    tr.querySelector('.emp-project').textContent=d.project||'';
+    tr.querySelector('.emp-expiry').textContent=d.expiry||'';
+    tr.querySelector('.action-cell').innerHTML=`<button class="mini-action" type="button" title="Редактировать" onclick="editEmployeeRow(this)">Ред.</button><button class="mini-action delete" type="button" title="Удалить" onclick="deleteEmployeeRow(this)">Удал.</button>`;
+  };
+
+  window.deleteEmployeeRow=function(btn){
+    if(!confirm('Удалить сотрудника?')) return;
+    const tbody=btn.closest('tbody'); btn.closest('tr').remove(); renumber(tbody);
+  };
+
+  window.addRequestEmployeeRow=function(){
+    const tbody=document.getElementById('requestEmployeesBody'); if(!tbody)return;
+    const tr=document.createElement('tr'); tr.className='unsaved-row'; tr.dataset.saved='0';
+    tr.innerHTML=`
+      <td class="num"></td><td><input class="row-edit-input emp-name-input" placeholder="Фамилия Имя Отчество"></td>
+      <td><input class="row-edit-input emp-position-input" placeholder="Должность"></td>
+      <td><input class="row-edit-input emp-phone-input" placeholder="+7…"></td>
+      <td><input class="row-edit-input emp-passport-input" placeholder="Серия / номер"></td>
+      <td><span class="badge">Новый</span></td>
+      <td class="action-cell"><button class="btn small ok employee-action" type="button" onclick="saveRequestEmployeeRow(this)">Сохранить</button><button class="btn small" type="button" onclick="cancelRequestEmployeeRow(this)">Отмена</button></td>`;
+    tbody.appendChild(tr); renumber(tbody); syncEmployeePickerButtons(); tr.querySelector('.emp-name-input').focus();
+  };
+
+  window.saveRequestEmployeeRow=function(btn){
+    const tr=btn.closest('tr');
+    const name=tr.querySelector('.emp-name-input').value.trim();
+    if(!name){ alert('Заполните ФИО сотрудника'); return; }
+    const pos=tr.querySelector('.emp-position-input').value.trim()||'—';
+    const phone=tr.querySelector('.emp-phone-input').value.trim()||'—';
+    const pass=tr.querySelector('.emp-passport-input').value.trim()||'—';
+    tr.dataset.saved='1'; tr.className='saved-flash';
+    tr.innerHTML=`<td class="num"></td><td class="emp-name">${escapeHtml(name)}</td><td class="emp-position">${escapeHtml(pos)}</td><td class="emp-phone">${escapeHtml(phone)}</td><td class="emp-passport">${escapeHtml(pass)}</td><td><span class="badge ok">Новый</span></td><td class="action-cell"><button class="mini-action" type="button" title="Редактировать" onclick="editRequestEmployeeRow(this)">Ред.</button><button class="mini-action delete" type="button" title="Удалить" onclick="deleteRequestEmployeeRow(this)">Удал.</button></td>`;
+    renumber(tr.parentElement); syncEmployeePickerButtons();
+  };
+
+  window.cancelRequestEmployeeRow=function(btn){const tb=btn.closest('tbody');btn.closest('tr').remove();renumber(tb)};
+  window.deleteRequestEmployeeRow=function(btn){
+    if(confirm('Удалить сотрудника из заявки?')){
+      const tb=btn.closest('tbody');
+      btn.closest('tr').remove();
+      renumber(tb);
+      syncEmployeePickerButtons();
+    }
+  };
+
+  window.editRequestEmployeeRow=function(btn){
+    const tr=btn.closest('tr'); if(tr.dataset.editing==='1')return;
+    tr.dataset.editing='1';
+    const d={name:tr.querySelector('.emp-name')?.textContent||'',pos:tr.querySelector('.emp-position')?.textContent||'',phone:tr.querySelector('.emp-phone')?.textContent||'',pass:tr.querySelector('.emp-passport')?.textContent||''};
+    tr.dataset.original=JSON.stringify(d);
+    tr.querySelector('.emp-name').innerHTML=`<input class="row-edit-input emp-name-input" value="${attr(d.name)}">`;
+    tr.querySelector('.emp-position').innerHTML=`<input class="row-edit-input emp-position-input" value="${attr(d.pos)}">`;
+    tr.querySelector('.emp-phone').innerHTML=`<input class="row-edit-input emp-phone-input" value="${attr(d.phone)}">`;
+    tr.querySelector('.emp-passport').innerHTML=`<input class="row-edit-input emp-passport-input" value="${attr(d.pass)}">`;
+    tr.querySelector('.action-cell').innerHTML=`<button class="btn small ok employee-action" type="button" onclick="saveRequestEmployeeEdit(this)">Сохранить</button><button class="btn small" type="button" onclick="cancelRequestEmployeeEdit(this)">Отмена</button>`;
+  };
+
+  window.saveRequestEmployeeEdit=function(btn){
+    const tr=btn.closest('tr');
+    const name=tr.querySelector('.emp-name-input').value.trim();
+    if(!name){alert('Заполните ФИО сотрудника');return}
+    const pos=tr.querySelector('.emp-position-input').value.trim()||'—';
+    const phone=tr.querySelector('.emp-phone-input').value.trim()||'—';
+    const pass=tr.querySelector('.emp-passport-input').value.trim()||'—';
+    tr.dataset.editing='0';
+    tr.querySelector('.emp-name').textContent=name;tr.querySelector('.emp-position').textContent=pos;tr.querySelector('.emp-phone').textContent=phone;tr.querySelector('.emp-passport').textContent=pass;
+    tr.querySelector('.action-cell').innerHTML=`<button class="mini-action" type="button" title="Редактировать" onclick="editRequestEmployeeRow(this)">Ред.</button><button class="mini-action delete" type="button" title="Удалить" onclick="deleteRequestEmployeeRow(this)">Удал.</button>`;
+  };
+
+  window.cancelRequestEmployeeEdit=function(btn){
+    const tr=btn.closest('tr'),d=JSON.parse(tr.dataset.original||'{}');tr.dataset.editing='0';
+    tr.querySelector('.emp-name').textContent=d.name||'';tr.querySelector('.emp-position').textContent=d.pos||'';tr.querySelector('.emp-phone').textContent=d.phone||'';tr.querySelector('.emp-passport').textContent=d.pass||'';
+    tr.querySelector('.action-cell').innerHTML=`<button class="mini-action" type="button" title="Редактировать" onclick="editRequestEmployeeRow(this)">Ред.</button><button class="mini-action delete" type="button" title="Удалить" onclick="deleteRequestEmployeeRow(this)">Удал.</button>`;
+  };
+
+  window.openEmployeePicker=function(){
+    const picker=document.querySelector('#new-request .employee-picker');
+    if(!picker)return;
+    picker.classList.add('open');
+    syncEmployeePickerButtons();
+  };
+
+  window.closeEmployeePicker=function(){
+    const picker=document.querySelector('#new-request .employee-picker');
+    if(picker)picker.classList.remove('open');
+  };
+
+  function requestHasEmployee(name){
+    const target=normalizeText(name);
+    return [...document.querySelectorAll('#requestEmployeesBody .emp-name')]
+      .some(td=>normalizeText(td.textContent)===target);
+  }
+
+  function syncEmployeePickerButtons(){
+    document.querySelectorAll('#new-request .employee-picker .pick-btn').forEach(btn=>{
+      const call=btn.getAttribute('onclick')||'';
+      const m=call.match(/addEmployeeFromPicker\('([^']+)'/);
+      if(!m)return;
+      const added=requestHasEmployee(m[1]);
+      btn.disabled=added;
+      btn.textContent=added?'Добавлен':'Добавить';
+      btn.style.opacity=added?'.55':'1';
+      btn.style.cursor=added?'default':'pointer';
+    });
+  }
+
+  window.addEmployeeFromPicker=function(name,pos,btn){
+    const tbody=document.getElementById('requestEmployeesBody');
+    if(!tbody)return;
+
+    if(requestHasEmployee(name)){
+      syncEmployeePickerButtons();
+      return;
+    }
+
+    const tr=document.createElement('tr');
+    tr.dataset.saved='1';
+    tr.innerHTML=`
+      <td class="num"></td>
+      <td class="emp-name">${escapeHtml(name)}</td>
+      <td class="emp-position">${escapeHtml(pos)}</td>
+      <td class="emp-phone">—</td>
+      <td class="emp-passport">—</td>
+      <td><span class="badge ok">Из списка</span></td>
+      <td class="action-cell">
+        <button class="mini-action" type="button" title="Редактировать" onclick="editRequestEmployeeRow(this)">Ред.</button>
+        <button class="mini-action delete" type="button" title="Удалить" onclick="deleteRequestEmployeeRow(this)">Удал.</button>
+      </td>`;
+    tbody.appendChild(tr);
+    renumber(tbody);
+    syncEmployeePickerButtons();
+
+    if(btn){
+      btn.disabled=true;
+      btn.textContent='Добавлен';
+    }
+  };
+
+  function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+  function attr(s){return escapeHtml(s).replace(/"/g,'&quot;')}
+  document.querySelectorAll('#employeesTableBody tr').forEach(updateEmployeeDataset);
+  document.querySelectorAll('tbody').forEach(renumber);
+  setRole(document.getElementById('roleSelect')?.value||'contractor');
+})();
+</script>
+
+
+<script>
+(function(){
+  const originalSetRole = window.setRole;
+  const norm = s => String(s||'').toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/\s+/g,' ').trim();
+  const safe = s => String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+
+  function navToRequests(){ const r=document.getElementById('screen-requests'); if(r)r.checked=true; }
+
+  window.setRole=function(role){
+    document.body.dataset.role=role;
+    if(originalSetRole) originalSetRole(role);
+    const empTab=document.querySelector('.employees-tab');
+    const conTab=document.querySelector('.contractors-tab');
+    if(empTab) empTab.classList.toggle('role-hidden', !(role==='contractor'||role==='admin'));
+    if(conTab) conTab.classList.toggle('role-hidden', !(role==='security'||role==='admin'));
+
+    const c2=document.getElementById('cap2');
+    const desc=document.getElementById('roleDescription');
+    window.viraCurrentRole=role;
+    document.querySelectorAll('.security-contractor-action').forEach(el=>el.classList.toggle('role-hidden', !(role==='security'||role==='admin')));
+    if(role==='security'){
+      if(c2)c2.textContent='Подрядчики: создание / редактирование / удаление';
+      if(desc)desc.textContent='Обычные пропуска, подрядчики и личные кабинеты';
+      if(document.getElementById('screen-employees')?.checked) navToRequests();
+    }else if(role==='manager'){
+      if(c2)c2.textContent='Без реестра сотрудников';
+      if(desc)desc.textContent='Разовые пропуска по площадке';
+      if(document.getElementById('screen-employees')?.checked || document.getElementById('screen-contractors')?.checked) navToRequests();
+    }else if(role==='contractor'){
+      if(document.getElementById('screen-contractors')?.checked) navToRequests();
+    }
+  };
+
+  window.openRequestModal=function(){
+    const modal=document.getElementById('new-request');
+    if(!modal)return;
+    modal.classList.add('open'); modal.setAttribute('aria-hidden','false');
+    updatePassTypeHint(); updateRequestEmployeeCount();
+  };
+  window.closeRequestModal=function(){
+    closeEmployeeSubmodals();
+    const modal=document.getElementById('new-request');
+    if(!modal)return;
+    modal.classList.remove('open'); modal.setAttribute('aria-hidden','true');
+  };
+  window.submitRequestDemo=function(type){
+    closeRequestModal();
+    const id=type==='onetime'?'screen-onetime':'screen-detail';
+    const radio=document.getElementById(id); if(radio)radio.checked=true;
+  };
+
+  window.updatePassTypeHint=function(){
+    // Visibility is driven by existing ordinary-inline / onetime-inline CSS.
+    const start=document.getElementById('requestStartDate');
+    const end=document.getElementById('requestEndDate');
+    if(document.getElementById('type-onetime')?.checked && start && end && !end.value) end.value=start.value;
+  };
+
+  function closeAllSub(){
+    ['employeeChoiceModal','existingEmployeeModal','newEmployeeModal'].forEach(id=>document.getElementById(id)?.classList.remove('open'));
+  }
+  window.closeEmployeeSubmodals=closeAllSub;
+  window.openEmployeeChoice=function(){ closeAllSub(); document.getElementById('employeeChoiceModal')?.classList.add('open'); };
+  window.backToEmployeeChoice=function(){ closeAllSub(); document.getElementById('employeeChoiceModal')?.classList.add('open'); };
+  window.showExistingEmployeePicker=function(){
+    closeAllSub();
+    const m=document.getElementById('existingEmployeeModal'); if(!m)return;
+    m.querySelectorAll('input[type="checkbox"]').forEach(cb=>{cb.checked=requestHasEmployeeV8(cb.value); cb.disabled=requestHasEmployeeV8(cb.value)});
+    m.classList.add('open');
+  };
+  window.showNewEmployeeModal=function(){ closeAllSub(); document.getElementById('newEmployeeModal')?.classList.add('open'); document.getElementById('newEmpName')?.focus(); };
+
+  function requestHasEmployeeV8(name){
+    return [...document.querySelectorAll('#requestEmployeesBody .emp-name')].some(td=>norm(td.textContent)===norm(name));
+  }
+  function maskPassport(value){
+    const clean=String(value||'').trim();
+    if(!clean || clean==='—') return '—';
+    const parts=clean.split(/\s+/); const prefix=parts.slice(0,2).join(' ');
+    return (prefix?prefix+' ':'')+'••••••';
+  }
+  function renumberRequestEmployees(){
+    [...document.querySelectorAll('#requestEmployeesBody tr')].forEach((tr,i)=>{const n=tr.querySelector('.num');if(n)n.textContent=i+1});
+    updateRequestEmployeeCount();
+  }
+  window.updateRequestEmployeeCount=function(){
+    const n=document.querySelectorAll('#requestEmployeesBody tr').length;
+    const el=document.getElementById('requestEmployeeCountV8');
+    if(el)el.textContent=n+' '+(n===1?'сотрудник':n>=2&&n<=4?'сотрудника':'сотрудников');
+  };
+  function appendRequestEmployee(data,source){
+    if(requestHasEmployeeV8(data.name)) return false;
+    const tr=document.createElement('tr');
+    tr.dataset.saved='1'; tr.dataset.passport=data.passport||'—';
+    tr.innerHTML=`<td class="num"></td><td class="emp-name">${safe(data.name)}</td><td class="emp-position">${safe(data.position||'—')}</td><td class="emp-phone">${safe(data.phone||'—')}</td><td class="emp-passport"><span class="passport-value">${safe(maskPassport(data.passport))}</span> <button class="passport-toggle" type="button" onclick="togglePassport(this)">Показать</button></td><td><span class="badge ok">${safe(source)}</span></td><td class="action-cell"><button class="mini-action delete" type="button" onclick="removeRequestEmployee(this)">Удал.</button></td>`;
+    document.getElementById('requestEmployeesBody')?.appendChild(tr); renumberRequestEmployees(); return true;
+  }
+
+  window.addSelectedExistingEmployees=function(){
+    const modal=document.getElementById('existingEmployeeModal'); if(!modal)return;
+    const selected=[...modal.querySelectorAll('input[type="checkbox"]:checked:not(:disabled)')];
+    if(!selected.length){alert('Выберите хотя бы одного сотрудника');return;}
+    selected.forEach(cb=>appendRequestEmployee({name:cb.value,position:cb.dataset.position,phone:cb.dataset.phone,passport:cb.dataset.passport},'Из списка'));
+    closeAllSub();
+  };
+  window.createNewEmployeeFromModal=function(){
+    const name=document.getElementById('newEmpName')?.value.trim()||'';
+    if(!name){alert('Заполните ФИО сотрудника');return;}
+    const data={name,position:document.getElementById('newEmpPosition')?.value.trim()||'—',phone:document.getElementById('newEmpPhone')?.value.trim()||'—',passport:document.getElementById('newEmpPassport')?.value.trim()||'—'};
+    if(!appendRequestEmployee(data,'Новый')){alert('Этот сотрудник уже добавлен в заявку');return;}
+    ['newEmpName','newEmpPosition','newEmpPhone','newEmpPassport'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+    closeAllSub();
+  };
+  window.removeRequestEmployee=function(btn){ if(!confirm('Удалить сотрудника из заявки?'))return; btn.closest('tr')?.remove(); renumberRequestEmployees(); };
+  window.togglePassport=function(btn){
+    const tr=btn.closest('tr'); const span=tr?.querySelector('.passport-value'); if(!tr||!span)return;
+    const full=tr.dataset.passport||'—'; const shown=btn.dataset.shown==='1';
+    span.textContent=shown?maskPassport(full):full; btn.textContent=shown?'Показать':'Скрыть'; btn.dataset.shown=shown?'0':'1';
+  };
+
+  window.applyContractorFilters=function(){
+    const q=norm(document.getElementById('contractorSearch')?.value||'');
+    const project=document.getElementById('contractorProject')?.value||'';
+    const accountStatus=document.getElementById('contractorStatus')?.value||'';
+    let shown=0;
+    document.querySelectorAll('#contractorsTable tbody tr').forEach(tr=>{
+      const okQ=!q||norm(tr.textContent).includes(q);
+      const okP=!project||(tr.dataset.project||'').includes(project);
+      const okS=!accountStatus||(tr.dataset.accountStatus||'active')===accountStatus;
+      const show=okQ&&okP&&okS;
+      tr.style.display=show?'':'none'; if(show)shown++;
+    });
+    const c=document.getElementById('contractorCount'); if(c)c.textContent=shown+' '+(shown===1?'подрядчик':shown>=2&&shown<=4?'подрядчика':'подрядчиков');
+  };
+  window.resetContractorFilters=function(){
+    const s=document.getElementById('contractorSearch'),p=document.getElementById('contractorProject'),st=document.getElementById('contractorStatus');
+    if(s)s.value='';if(p)p.selectedIndex=0;if(st)st.selectedIndex=0;applyContractorFilters();
+  };
+
+  function contractorModalEl(){return document.getElementById('contractorModal');}
+  function contractorSelectedProjects(){
+    return [...document.querySelectorAll('input[name="contractorProjectAccess"]:checked')].map(x=>x.value);
+  }
+  function contractorPlural(n){return n===1?'объект':(n>=2&&n<=4?'объекта':'объектов');}
+  function randomPassword(length=14){
+    const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+    const required=['ABCDEFGHJKLMNPQRSTUVWXYZ','abcdefghijkmnopqrstuvwxyz','23456789','!@#$%'];
+    const chars=[];
+    const rand=max=>{
+      if(window.crypto&&crypto.getRandomValues){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%max;}
+      return Math.floor(Math.random()*max);
+    };
+    required.forEach(group=>chars.push(group[rand(group.length)]));
+    while(chars.length<length)chars.push(alphabet[rand(alphabet.length)]);
+    for(let i=chars.length-1;i>0;i--){const j=rand(i+1);[chars[i],chars[j]]=[chars[j],chars[i]];}
+    return chars.join('');
+  }
+  window.generateContractorPassword=function(){
+    const input=document.getElementById('contractorPassword'); if(!input)return;
+    input.value=randomPassword();
+    const f=document.getElementById('passwordCopyFeedback');if(f)f.textContent='';
+  };
+  async function copyTextValue(value){
+    if(!value)return false;
+    try{
+      if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(value);return true;}
+    }catch(e){}
+    const ta=document.createElement('textarea');ta.value=value;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
+    let ok=false;try{ok=document.execCommand('copy');}catch(e){} ta.remove();return ok;
+  }
+  window.copyContractorPassword=async function(){
+    const value=document.getElementById('contractorPassword')?.value||'';
+    if(!value){alert('Сначала сгенерируйте пароль');return;}
+    const ok=await copyTextValue(value);
+    const f=document.getElementById('passwordCopyFeedback');if(f)f.textContent=ok?'Пароль скопирован':'Не удалось скопировать автоматически. Выделите пароль вручную.';
+  };
+  window.copyStoredContractorPassword=async function(btn){
+    const tr=btn.closest('tr');const password=tr?.dataset.password||'';
+    if(!password){alert('Для этого подрядчика пароль не сохранён в прототипе. При редактировании можно сгенерировать новый.');return;}
+    const ok=await copyTextValue(password);
+    const old=btn.textContent;btn.textContent=ok?'Скопировано':'Не скопировано';
+    setTimeout(()=>{btn.textContent=old},1300);
+  };
+
+  const CONTRACTOR_STATE_KEY='viraPassPrototypeContractorRegistryV11';
+  const LEGACY_CONTRACTOR_STORAGE_KEY='viraPassPrototypeContractors';
+  const BASE_CONTRACTORS=[
+    {name:'ООО «МонтажСтрой»',inn:'5400000000',projects:['ЖК Сподвижники','ЖК Европейский берег','ЖК Расцветай'],login:'office@montazhstroy.ru',password:'Vira#Montazh26',accountStatus:'active',pending:2,last:'14.08.2026'},
+    {name:'ООО «СтройГрад»',inn:'5401000001',projects:['ЖК Европейский берег','ЖК Сподвижники'],login:'office@stroygrad.ru',password:'Vira#StroyGrad26',accountStatus:'active',pending:1,last:'14.08.2026'},
+    {name:'ООО «СибМонтаж»',inn:'5402000002',projects:['ЖК Европейский берег','ЖК Расцветай'],login:'office@sibmontazh.ru',password:'Vira#SibMontazh26',accountStatus:'active',pending:1,last:'14.08.2026'},
+    {name:'ООО «ФасадПро»',inn:'5403000003',projects:['ЖК Расцветай'],login:'office@fasadpro.ru',password:'Vira#FasadPro26',accountStatus:'active',pending:0,last:'13.08.2026'}
+  ];
+  let contractorEditInn=null;
+
+  function readJsonStorage(key,fallback){
+    try{const v=JSON.parse(localStorage.getItem(key)||'null');return v??fallback;}catch(e){return fallback;}
+  }
+  function getContractorRegistry(){
+    const current=readJsonStorage(CONTRACTOR_STATE_KEY,null);
+    if(Array.isArray(current)){
+      let changed=false;
+      const migrated=current.map(item=>{
+        const seed=BASE_CONTRACTORS.find(x=>x.inn===item.inn);
+        const next={...item};
+        if(!next.password&&seed?.password){next.password=seed.password;changed=true;}
+        if(!next.accountStatus){next.accountStatus=seed?.accountStatus||'active';changed=true;}
+        return next;
+      });
+      if(changed)saveContractorRegistry(migrated);
+      return migrated;
+    }
+    const legacy=readJsonStorage(LEGACY_CONTRACTOR_STORAGE_KEY,[]);
+    const merged=BASE_CONTRACTORS.map(x=>({...x}));
+    if(Array.isArray(legacy)){
+      legacy.forEach(item=>{
+        if(item&&item.inn&&!merged.some(x=>x.inn===item.inn)){
+          merged.push({...item,pending:item.pending??0,last:item.last||'—'});
+        }
+      });
+    }
+    saveContractorRegistry(merged);
+    return merged;
+  }
+  function saveContractorRegistry(items){
+    try{localStorage.setItem(CONTRACTOR_STATE_KEY,JSON.stringify(items));}catch(e){}
+  }
+  function rebuildContractorRequestFilter(){
+    const select=document.getElementById('reqContractor');if(!select)return;
+    const selected=select.value;
+    const names=new Set();
+    document.querySelectorAll('#requestsTable tbody tr').forEach(tr=>{if(tr.dataset.contractor)names.add(tr.dataset.contractor)});
+    getContractorRegistry().forEach(c=>{if(c.name)names.add(c.name)});
+    select.innerHTML='<option value="">Все подрядчики</option>';
+    [...names].sort((a,b)=>a.localeCompare(b,'ru')).forEach(name=>{
+      const opt=document.createElement('option');opt.value=name;opt.textContent=name;select.appendChild(opt);
+    });
+    if([...select.options].some(o=>o.value===selected))select.value=selected;
+  }
+  function renderContractorRow(data){
+    const tbody=document.querySelector('#contractorsTable tbody');if(!tbody)return null;
+    const tr=document.createElement('tr');
+    tr.dataset.project=(data.projects||[]).join(' ');
+    tr.dataset.inn=data.inn||'';
+    tr.dataset.login=data.login||'';
+    tr.dataset.password=data.password||'';
+    tr.dataset.name=data.name||'';
+    tr.dataset.accountStatus=data.accountStatus||'active';
+    const projectCount=(data.projects||[]).length;
+    const projectText=projectCount?`${projectCount} ${contractorPlural(projectCount)}`:'Без привязки';
+    const passwordButton='';
+    const active=(data.accountStatus||'active')==='active';
+    const accountBadge=active?'<span class="badge ok">Активен</span>':'<span class="badge bad">Не активен</span>';
+    tr.innerHTML=`<td class="num"></td><td><strong>${safe(data.name)}</strong></td><td>${safe(data.inn)}</td><td title="${safe((data.projects||[]).join(', '))}">${safe(projectText)}</td><td>${safe(String(data.pending??0))}</td><td>${safe(data.last||'—')}</td><td><div class="contractor-account">${accountBadge}<small>${safe(data.login||'—')}</small></div></td><td class="contractor-action-cell"><button class="mini-action" type="button" onclick="editContractor(this)">Ред.</button><button class="mini-action danger" type="button" onclick="deleteContractor(this)">Удал.</button>${passwordButton}</td>`;
+    tbody.appendChild(tr);
+    return tr;
+  }
+  function renderContractorRegistry(){
+    const tbody=document.querySelector('#contractorsTable tbody');if(!tbody)return;
+    tbody.innerHTML='';
+    getContractorRegistry().forEach(renderContractorRow);
+    [...tbody.rows].forEach((row,i)=>{const n=row.querySelector('.num');if(n)n.textContent=i+1});
+    rebuildContractorRequestFilter();
+    applyContractorFilters();
+  }
+  function resetContractorModal(mode='create'){
+    ['contractorName','contractorInn','contractorLogin'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+    const accountStatus=document.getElementById('contractorAccountStatus');if(accountStatus)accountStatus.value='active';
+    document.querySelectorAll('input[name="contractorProjectAccess"]').forEach(x=>x.checked=false);
+    const pass=document.getElementById('contractorPassword');if(pass)pass.value='';
+    const r=document.getElementById('contractorCreateResult');if(r){r.classList.remove('show');r.textContent='';}
+    const f=document.getElementById('passwordCopyFeedback');if(f)f.textContent='';
+    const title=document.getElementById('contractorModalTitle');
+    const subtitle=document.getElementById('contractorModalSubtitle');
+    const btn=document.getElementById('createContractorBtn');
+    const gen=document.getElementById('generatePasswordBtn');
+    const passLabel=document.getElementById('contractorPasswordLabel');
+    if(mode==='edit'){
+      if(title)title.textContent='Редактирование подрядчика';
+      if(subtitle)subtitle.textContent='';
+      if(passLabel)passLabel.textContent='Пароль личного кабинета *';
+      if(btn){btn.disabled=false;btn.textContent='Сохранить изменения';}
+      if(gen){gen.disabled=false;gen.textContent='Сгенерировать новый пароль';}
+    }else{
+      if(title)title.textContent='Новый подрядчик';
+      if(subtitle)subtitle.textContent='';
+      if(passLabel)passLabel.textContent='Пароль личного кабинета *';
+      if(btn){btn.disabled=false;btn.textContent='Создать подрядчика и ЛК';}
+      if(gen){gen.disabled=false;gen.textContent='Сгенерировать пароль';}
+    }
+  }
+
+  window.openContractorModal=function(){
+    if(!(window.viraCurrentRole==='security'||window.viraCurrentRole==='admin'))return;
+    contractorEditInn=null;
+    resetContractorModal('create');
+    const m=contractorModalEl();if(!m)return;
+    m.classList.add('open');m.setAttribute('aria-hidden','false');
+    setTimeout(()=>document.getElementById('contractorName')?.focus(),0);
+  };
+  window.closeContractorModal=function(){
+    const m=contractorModalEl();if(!m)return;m.classList.remove('open');m.setAttribute('aria-hidden','true');
+    contractorEditInn=null;
+  };
+
+  window.editContractor=function(btn){
+    if(!(window.viraCurrentRole==='security'||window.viraCurrentRole==='admin'))return;
+    const tr=btn.closest('tr');const inn=tr?.dataset.inn||'';if(!inn)return;
+    const item=getContractorRegistry().find(x=>x.inn===inn);if(!item)return;
+    contractorEditInn=inn;
+    resetContractorModal('edit');
+    const name=document.getElementById('contractorName');if(name)name.value=item.name||'';
+    const innEl=document.getElementById('contractorInn');if(innEl)innEl.value=item.inn||'';
+    const login=document.getElementById('contractorLogin');if(login)login.value=item.login||'';
+    const status=document.getElementById('contractorAccountStatus');if(status)status.value=item.accountStatus||'active';
+    const pass=document.getElementById('contractorPassword');if(pass)pass.value=item.password||'';
+    const projects=new Set(item.projects||[]);
+    document.querySelectorAll('input[name="contractorProjectAccess"]').forEach(x=>x.checked=projects.has(x.value));
+    const feedback=document.getElementById('passwordCopyFeedback');
+    if(feedback)feedback.textContent='Пароль обязателен для активного личного кабинета.';
+    const m=contractorModalEl();if(!m)return;
+    m.classList.add('open');m.setAttribute('aria-hidden','false');
+    setTimeout(()=>document.getElementById('contractorName')?.focus(),0);
+  };
+
+  window.deleteContractor=function(btn){
+    if(!(window.viraCurrentRole==='security'||window.viraCurrentRole==='admin'))return;
+    const tr=btn.closest('tr');const inn=tr?.dataset.inn||'';if(!inn)return;
+    const registry=getContractorRegistry();
+    const item=registry.find(x=>x.inn===inn);if(!item)return;
+    if(!confirm(`Удалить подрядчика «${item.name}» из реестра?\n\nИсторические заявки подрядчика останутся в списке заявок.`))return;
+    saveContractorRegistry(registry.filter(x=>x.inn!==inn));
+    renderContractorRegistry();
+  };
+
+  window.createContractorAccount=function(){
+    const name=document.getElementById('contractorName')?.value.trim()||'';
+    const inn=(document.getElementById('contractorInn')?.value||'').replace(/\D/g,'');
+    const login=document.getElementById('contractorLogin')?.value.trim()||'';
+    const enteredPassword=document.getElementById('contractorPassword')?.value||'';
+    const accountStatus=document.getElementById('contractorAccountStatus')?.value||'active';
+    const projects=contractorSelectedProjects();
+    if(!name){alert('Укажите название организации');return;}
+    if(!/^\d{10}(\d{2})?$/.test(inn)){alert('ИНН должен содержать 10 или 12 цифр');return;}
+    if(!login){alert('Укажите логин личного кабинета');return;}
+    if(!enteredPassword.trim()){alert('Укажите или сгенерируйте пароль личного кабинета');return;}
+
+    const registry=getContractorRegistry();
+    const duplicate=registry.find(x=>x.inn===inn && x.inn!==contractorEditInn);
+    if(duplicate){alert('Подрядчик с таким ИНН уже есть в реестре');return;}
+    const duplicateLogin=registry.find(x=>norm(x.login)===norm(login) && x.inn!==contractorEditInn);
+    if(duplicateLogin){alert('Этот логин личного кабинета уже используется другим подрядчиком');return;}
+
+    if(contractorEditInn){
+      const idx=registry.findIndex(x=>x.inn===contractorEditInn);
+      if(idx<0){alert('Подрядчик не найден');return;}
+      const old=registry[idx];
+      registry[idx]={
+        ...old,
+        name,inn,login,projects,accountStatus,
+        password:enteredPassword,
+        updatedAt:new Date().toISOString()
+      };
+      saveContractorRegistry(registry);
+      contractorEditInn=inn;
+      renderContractorRegistry();
+      if(norm(name)===norm('ООО «МонтажСтрой»'))fillRequestProjects(name);
+      const r=document.getElementById('contractorCreateResult');
+      if(r){r.innerHTML='<strong>Изменения сохранены.</strong><br>Подрядчик обновлён в реестре.';r.classList.add('show');}
+      const btn=document.getElementById('createContractorBtn');if(btn)btn.textContent='Изменения сохранены';
+      setTimeout(()=>{if(btn)btn.textContent='Сохранить изменения'},1200);
+      return;
+    }
+
+    const contractor={name,inn,login,password:enteredPassword,projects,accountStatus,pending:0,last:'—',createdAt:new Date().toISOString()};
+    registry.push(contractor);
+    saveContractorRegistry(registry);
+    renderContractorRegistry();
+
+    const r=document.getElementById('contractorCreateResult');
+    if(r){r.innerHTML=`<strong>Подрядчик сохранён в список, личный кабинет создан.</strong><br>Логин: ${safe(login)}. Скопируйте пароль перед закрытием окна.`;r.classList.add('show');}
+    const btn=document.getElementById('createContractorBtn');if(btn){btn.disabled=true;btn.textContent='Сохранено в список';}
+    const gen=document.getElementById('generatePasswordBtn');if(gen)gen.disabled=true;
+  };
+
+  renderContractorRegistry();
+  document.getElementById('type-ordinary')?.addEventListener('change',updatePassTypeHint);
+  document.getElementById('type-onetime')?.addEventListener('change',updatePassTypeHint);
+  setRole(document.getElementById('roleSelect')?.value||'contractor');
+  updateRequestEmployeeCount();
+})();
+</script>
+
+
+<script>
+(function(){
+  'use strict';
+
+  const REQUEST_KEY='viraPassPrototypeRequestsV12';
+  const EMPLOYEE_KEY='viraPassPrototypeEmployeesV12';
+  const OWNER='ООО «МонтажСтрой»';
+  let currentRequestId=null;
+  let rejectReturnScreen='screen-detail';
+
+  const norm=s=>String(s||'').toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/\s+/g,' ').trim();
+  const safe=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  const read=(k,fallback)=>{try{const v=JSON.parse(localStorage.getItem(k)||'null');return v??fallback}catch(e){return fallback}};
+  const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+
+  function go(id){const el=document.getElementById(id);if(el)el.checked=true}
+  function todayIso(){
+    const d=new Date(), p=n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+  }
+  function addDaysIso(iso,days){
+    const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+days);
+    const p=n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+  }
+  function fullDate(iso){
+    if(!iso)return '—';
+    const [y,m,d]=iso.split('-');return `${d}.${m}.${y}`;
+  }
+  function shortDate(iso){
+    if(!iso)return '—';
+    const [y,m,d]=iso.split('-');return `${d}.${m}`;
+  }
+  function statusMeta(status){
+    return {
+      approval:{text:'На согласовании',cls:'warn'},
+      execution:{text:'На исполнении',cls:'status-info'},
+      processed:{text:'Обработана',cls:'ok'},
+      rejected:{text:'Отклонена',cls:'bad'},
+      execution_error:{text:'Ошибка исполнения',cls:'status-error'}
+    }[status]||{text:status||'—',cls:''};
+  }
+  function routeStage(req){
+    if(req.status==='approval')return req.route==='manager'?'Рук. площадки':'СБ';
+    if(req.status==='execution'||req.status==='execution_error')return 'Исполнение';
+    return '—';
+  }
+  function sourceText(tr){
+    return tr.cells?.[5]?.innerText?.trim()||tr.cells?.[5]?.textContent?.trim()||'Из списка';
+  }
+
+  // ---------- Employees: one persistent registry ----------
+  function parseEmployeeRows(){
+    return [...document.querySelectorAll('#employeesTableBody tr')].filter(tr=>tr.dataset.saved!=='0').map((tr,i)=>({
+      id:tr.dataset.employeeId||`seed-${i+1}`,
+      name:tr.querySelector('.emp-name')?.textContent.trim()||'',
+      position:tr.querySelector('.emp-position')?.textContent.trim()||'—',
+      owner:tr.dataset.owner||tr.querySelector('.emp-owner')?.textContent.trim()||OWNER,
+      inn:tr.cells?.[4]?.textContent.trim()||'5400000000',
+      project:tr.dataset.project||tr.querySelector('.emp-project')?.textContent.trim()||'—',
+      expiry:tr.querySelector('.emp-expiry')?.textContent.trim()||'—',
+      status:tr.dataset.status||'active',
+      phone:tr.dataset.phone||'—',
+      passport:tr.dataset.passport||'—'
+    }));
+  }
+
+  const employeeSeeds=parseEmployeeRows();
+  const known={
+    'Иванов Иван Иванович':{phone:'+7 999 123-45-67',passport:'50 12 123456'},
+    'Петров Петр Петрович':{phone:'+7 999 765-43-21',passport:'50 14 654321'},
+    'Сидоров Алексей Олегович':{phone:'+7 913 101-11-11',passport:'50 16 111222'}
+  };
+  employeeSeeds.forEach(e=>{if(known[e.name])Object.assign(e,known[e.name])});
+  let employees=read(EMPLOYEE_KEY,null);
+  if(!Array.isArray(employees)){
+    employees=employeeSeeds;
+  }else{
+    employees=employees.map(e=>e&&e.status==='expiring'?{...e,status:'active'}:e);
+  }
+  save(EMPLOYEE_KEY,employees);
+
+  function employeeBadge(status){
+    if(status==='expired')return '<span class="badge bad">Истёк</span>';
+    if(status==='expiring')return '<span class="badge ok">Действует</span>';
+    if(status==='new')return '<span class="badge">Без пропуска</span>';
+    return '<span class="badge ok">Действует</span>';
+  }
+  function renderEmployeeRegistry(){
+    const tbody=document.getElementById('employeesTableBody');if(!tbody)return;
+    tbody.innerHTML='';
+    employees.forEach(e=>{
+      const tr=document.createElement('tr');
+      tr.dataset.saved='1';tr.dataset.employeeId=e.id;tr.dataset.owner=e.owner;tr.dataset.project=e.project;
+      tr.dataset.status=e.status||'active';tr.dataset.phone=e.phone||'—';tr.dataset.passport=e.passport||'—';
+      tr.innerHTML=`<td class="num"></td><td class="emp-name">${safe(e.name)}</td><td class="emp-position">${safe(e.position||'—')}</td><td class="emp-owner">${safe(e.owner)}</td><td>${safe(e.inn||'—')}</td><td class="emp-project">${safe(e.project||'—')}</td><td class="emp-expiry">${safe(e.expiry||'—')}</td><td>${employeeBadge(e.status)}</td><td class="action-cell"><button class="mini-action" type="button" title="Редактировать" onclick="editEmployeeRow(this)">Ред.</button><button class="mini-action delete" type="button" title="Удалить" onclick="deleteEmployeeRow(this)">Удал.</button></td>`;
+      tbody.appendChild(tr);
+    });
+    [...tbody.rows].forEach((r,i)=>{const n=r.querySelector('.num');if(n)n.textContent=i+1});
+    window.applyEmployeeFilters?.();
+  }
+  function syncEmployeesFromDom(){
+    employees=parseEmployeeRows().map((e,i)=>{
+      const previous=employees.find(x=>x.id===e.id)||employees.find(x=>norm(x.name)===norm(e.name)&&x.owner===e.owner);
+      return {...e,id:e.id||previous?.id||`emp-${Date.now()}-${i}`,phone:e.phone==='—'?(previous?.phone||'—'):e.phone,passport:e.passport==='—'?(previous?.passport||'—'):e.passport};
+    });
+    save(EMPLOYEE_KEY,employees);
+  }
+
+  const oldSaveEmployeeRow=window.saveEmployeeRow;
+  window.saveEmployeeRow=function(btn){oldSaveEmployeeRow?.(btn);const tr=btn.closest('tr');if(tr&&!tr.dataset.employeeId)tr.dataset.employeeId='emp-'+Date.now();syncEmployeesFromDom();};
+  const oldSaveEmployeeEdit=window.saveEmployeeEdit;
+  window.saveEmployeeEdit=function(btn){oldSaveEmployeeEdit?.(btn);syncEmployeesFromDom();};
+  const oldDeleteEmployeeRow=window.deleteEmployeeRow;
+  window.deleteEmployeeRow=function(btn){oldDeleteEmployeeRow?.(btn);syncEmployeesFromDom();};
+
+  renderEmployeeRegistry();
+
+  function employeeByName(name){return employees.find(e=>e.owner===OWNER&&norm(e.name)===norm(name))}
+  function saveNewEmployeeFromRequest(data){
+    const existing=employeeByName(data.name);
+    if(existing)return existing;
+    const project=document.getElementById('requestProject')?.value||'—';
+    const e={id:'emp-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),name:data.name,position:data.position||'—',phone:data.phone||'—',passport:data.passport||'—',owner:OWNER,inn:'5400000000',project,expiry:'—',status:'new'};
+    employees.push(e);save(EMPLOYEE_KEY,employees);renderEmployeeRegistry();return e;
+  }
+
+  // Existing employee picker is built from the actual employee registry.
+  window.showExistingEmployeePicker=function(){
+    const choice=document.getElementById('employeeChoiceModal');choice?.classList.remove('open');
+    const modal=document.getElementById('existingEmployeeModal');if(!modal)return;
+    const list=modal.querySelector('.picker-list-v8');if(!list)return;
+    const own=employees.filter(e=>e.owner===OWNER);
+    list.innerHTML=own.length?own.map(e=>{
+      const added=[...document.querySelectorAll('#requestEmployeesBody .emp-name')].some(td=>norm(td.textContent)===norm(e.name));
+      return `<label class="picker-check"><input type="checkbox" value="${safe(e.name)}" data-position="${safe(e.position||'—')}" data-phone="${safe(e.phone||'—')}" data-passport="${safe(e.passport||'—')}" ${added?'checked disabled':''}><span><strong>${safe(e.name)}</strong><small>${safe(e.position||'—')} · ${safe(e.project||'—')}</small></span></label>`;
+    }).join(''):'<div class="note">В реестре пока нет сотрудников.</div>';
+    modal.classList.add('open');
+  };
+
+  const oldCreateNewEmployee=window.createNewEmployeeFromModal;
+  window.createNewEmployeeFromModal=function(){
+    const name=document.getElementById('newEmpName')?.value.trim()||'';
+    if(!name){alert('Заполните ФИО сотрудника');return}
+    const data={name,position:document.getElementById('newEmpPosition')?.value.trim()||'—',phone:document.getElementById('newEmpPhone')?.value.trim()||'—',passport:document.getElementById('newEmpPassport')?.value.trim()||'—'};
+    if([...document.querySelectorAll('#requestEmployeesBody .emp-name')].some(td=>norm(td.textContent)===norm(name))){alert('Этот сотрудник уже добавлен в заявку');return}
+    saveNewEmployeeFromRequest(data);
+    const append=()=>{
+      const tr=document.createElement('tr');tr.dataset.saved='1';tr.dataset.passport=data.passport||'—';
+      const masked=(!data.passport||data.passport==='—')?'—':data.passport.split(/\s+/).slice(0,2).join(' ')+' ••••••';
+      tr.innerHTML=`<td class="num"></td><td class="emp-name">${safe(data.name)}</td><td class="emp-position">${safe(data.position)}</td><td class="emp-phone">${safe(data.phone)}</td><td class="emp-passport"><span class="passport-value">${safe(masked)}</span> <button class="passport-toggle" type="button" onclick="togglePassport(this)">Показать</button></td><td><span class="badge ok">Новый</span></td><td class="action-cell"><button class="mini-action delete" type="button" onclick="removeRequestEmployee(this)">Удал.</button></td>`;
+      document.getElementById('requestEmployeesBody')?.appendChild(tr);
+      [...document.querySelectorAll('#requestEmployeesBody tr')].forEach((r,i)=>{const n=r.querySelector('.num');if(n)n.textContent=i+1});
+      window.updateRequestEmployeeCount?.();
+    };
+    append();
+    ['newEmpName','newEmpPosition','newEmpPhone','newEmpPassport'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+    window.closeEmployeeSubmodals?.();
+  };
+
+  // ---------- Requests: persistent state and real transitions ----------
+  function parseRequestRows(){
+    return [...document.querySelectorAll('#requestsTable tbody tr')].map(tr=>{
+      const count=Number(tr.cells?.[7]?.textContent.trim()||0);
+      const contractor=tr.dataset.contractor||tr.cells?.[3]?.textContent.trim()||OWNER;
+      const project=tr.dataset.project||tr.cells?.[5]?.textContent.trim()||'—';
+      const candidates=employees.filter(e=>e.owner===contractor&&(e.project===project||project==='—')).slice(0,count);
+      while(candidates.length<count)candidates.push({name:`Сотрудник ${candidates.length+1}`,position:'—',phone:'—',passport:'—'});
+      return {
+        id:tr.cells?.[1]?.textContent.trim()||String(Date.now()),
+        date:tr.cells?.[2]?.textContent.trim()||'—',
+        contractor,
+        type:tr.dataset.type||'ordinary',
+        project,
+        periodText:tr.cells?.[6]?.textContent.trim()||'—',
+        employeeCount:count,
+        employees:candidates.map(e=>({name:e.name,position:e.position,phone:e.phone||'—',passport:e.passport||'—',source:'Из списка'})),
+        stage:tr.cells?.[8]?.textContent.trim()||'—',
+        status:tr.dataset.status||'approval',
+        route:tr.dataset.route||((tr.dataset.type||'ordinary')==='onetime'?'manager':'security'),
+        comment:''
+      };
+    });
+  }
+
+  const requestSeeds=parseRequestRows();
+  let requests=read(REQUEST_KEY,null);
+  if(!Array.isArray(requests)){requests=requestSeeds;save(REQUEST_KEY,requests)}
+
+  function persistRequests(){save(REQUEST_KEY,requests)}
+  function getRequest(id){return requests.find(r=>String(r.id)===String(id))}
+  function maxRequestNumber(){return Math.max(1100,...requests.map(r=>Number(r.id)||0))}
+  function requestPeriod(req){
+    if(req.startDate&&req.endDate)return `${fullDate(req.startDate)} — ${fullDate(req.endDate)}`;
+    return req.periodText||'—';
+  }
+  function tablePeriod(req){
+    if(req.startDate&&req.endDate)return `${shortDate(req.startDate)}–${shortDate(req.endDate)}`;
+    return req.periodText||'—';
+  }
+  function renderRequests(){
+    const tbody=document.querySelector('#requestsTable tbody');if(!tbody)return;
+    tbody.innerHTML='';
+    [...requests].sort((a,b)=>(Number(b.id)||0)-(Number(a.id)||0)).forEach(req=>{
+      const meta=statusMeta(req.status);
+      const tr=document.createElement('tr');
+      tr.dataset.status=req.status;tr.dataset.type=req.type;tr.dataset.project=req.project;tr.dataset.contractor=req.contractor;tr.dataset.route=req.route;
+      tr.dataset.search=norm(`${req.id} ${req.contractor} ${req.type==='onetime'?'разовый':'обычный'} ${req.project} ${meta.text} ${req.comment||''}`);
+      tr.innerHTML=`<td class="num"></td><td><button class="request-number-link" type="button" onclick="openRequestById('${safe(req.id)}')">${safe(req.id)}</button></td><td>${safe(req.date)}</td><td>${safe(req.contractor)}</td><td>${req.type==='onetime'?'Разовый':'Обычный'}</td><td>${safe(req.project)}</td><td>${safe(tablePeriod(req))}</td><td>${safe(String(req.employeeCount||req.employees?.length||0))}</td><td>${safe(routeStage(req))}</td><td><span class="badge ${meta.cls}">${safe(meta.text)}</span></td>`;
+      tbody.appendChild(tr);
+    });
+    window.applyRequestFilters?.();
+  }
+
+  function employeesHtml(req, result){
+    const list=req.employees?.length?req.employees:[{name:'Сотрудник',position:'—',source:'—'}];
+    if(result==='processed'){
+      return list.map(e=>`<tr><td>${safe(e.name)}</td><td>${safe(req.endDate?fullDate(req.endDate):req.periodText||'—')}</td></tr>`).join('');
+    }
+    if(result==='execution'){
+      return list.map(e=>`<tr><td>${safe(e.name)}</td><td><span class="badge status-info">В обработке</span></td></tr>`).join('');
+    }
+    if(result==='error'){
+      return list.map(e=>`<tr><td>${safe(e.name)}</td><td><span class="badge status-error">Ошибка исполнения</span></td></tr>`).join('');
+    }
+    return list.map(e=>`<tr><td>${safe(e.name)}</td><td>${safe(e.position||'—')}</td></tr>`).join('');
+  }
+
+  function renderApproval(req){
+    const screen=req.type==='onetime'?document.getElementById('one-time'):document.getElementById('request-detail');
+    if(!screen)return;
+    const h=screen.querySelector('.head h1');if(h)h.textContent=`Заявка №${req.id}`;
+    const p=screen.querySelector('.head p');if(p)p.textContent=`${req.type==='onetime'?'Разовый':'Обычный'} пропуск · ${req.project}`;
+    const detail=screen.querySelector('.detail');
+    if(detail)detail.innerHTML=`<div class="k">Подрядчик</div><div>${safe(req.contractor)}</div><div class="k">Период</div><div>${safe(requestPeriod(req))}</div><div class="k">Статус</div><div><span class="badge warn">На согласовании</span></div>`;
+    const tbody=screen.querySelector('tbody');if(tbody)tbody.innerHTML=employeesHtml(req);
+  }
+  function renderExecution(req){
+    const screen=document.getElementById('execution');
+    const h=screen?.querySelector('.head h1');if(h)h.textContent=`Заявка №${req.id} на исполнении`;
+    const p=screen?.querySelector('.head p');if(p)p.textContent=`${req.type==='onetime'?'Разовый':'Обычный'} пропуск · ${req.project} · передано на исполнение`;
+    const table=screen?.querySelector('table');if(table){const head=table.querySelector('thead tr');if(head)head.innerHTML='<th>ФИО</th><th>Статус</th>';}
+    const tbody=screen?.querySelector('tbody');if(tbody)tbody.innerHTML=employeesHtml(req,'execution');
+  }
+  function renderProcessed(req){
+    const screen=document.getElementById('processed');
+    const h=screen?.querySelector('.head h1');if(h)h.textContent=`Заявка №${req.id} обработана`;
+    const p=screen?.querySelector('.head p');if(p)p.textContent=`${req.type==='onetime'?'Разовый':'Обычный'} пропуск · ${req.project}.`;
+    const table=screen?.querySelector('table');if(table){const head=table.querySelector('thead tr');if(head)head.innerHTML='<th>ФИО</th><th>Доступ до</th>';}
+    const tbody=screen?.querySelector('tbody');if(tbody)tbody.innerHTML=employeesHtml(req,'processed');
+  }
+  function renderRejected(req){
+    const screen=document.getElementById('rejected-result');
+    const h=screen?.querySelector('.head h1');if(h)h.textContent=`Заявка №${req.id} отклонена`;
+    const p=screen?.querySelector('.head p');
+    if(p)p.textContent='';
+    const detail=screen?.querySelector('.detail');
+    if(detail)detail.innerHTML=`<div class="k">Подрядчик</div><div>${safe(req.contractor)}</div><div class="k">Тип пропуска</div><div>${req.type==='onetime'?'Разовый':'Обычный'}</div><div class="k">Объект</div><div>${safe(req.project)}</div><div class="k">Период</div><div>${safe(requestPeriod(req))}</div><div class="k">Статус</div><div><span class="badge bad">Отклонена</span></div><div class="k">Комментарий</div><div>${safe(req.comment||'Причина не указана')}</div>`;
+    let wrap=screen?.querySelector('.rejected-employees-table');
+    if(!wrap&&screen){
+      wrap=document.createElement('div');
+      wrap.className='table rejected-employees-table';
+      wrap.innerHTML='<table><thead><tr><th>ФИО</th><th>Должность</th></tr></thead><tbody></tbody></table>';
+      screen.appendChild(wrap);
+    }
+    const tbody=wrap?.querySelector('tbody');
+    if(tbody)tbody.innerHTML=employeesHtml(req);
+  }
+  function renderError(req){
+    const screen=document.getElementById('execution-error');
+    const h=screen?.querySelector('.head h1');if(h)h.textContent=`Ошибка исполнения заявки №${req.id}`;
+    const p=screen?.querySelector('.head p');if(p)p.textContent=`Не удалось завершить обработку · ${req.project}.`;
+    const table=screen?.querySelector('table');if(table){const head=table.querySelector('thead tr');if(head)head.innerHTML='<th>ФИО</th><th>Результат</th>';}
+    const tbody=screen?.querySelector('tbody');if(tbody)tbody.innerHTML=employeesHtml(req,'error');
+  }
+
+  window.openRequestById=function(id){
+    const req=getRequest(id);if(!req)return;
+    currentRequestId=String(req.id);
+    if(req.status==='approval'){renderApproval(req);go(req.type==='onetime'?'screen-onetime':'screen-detail')}
+    else if(req.status==='execution'){renderExecution(req);go('screen-execution')}
+    else if(req.status==='processed'){renderProcessed(req);go('screen-processed')}
+    else if(req.status==='rejected'){renderRejected(req);go('screen-rejected-result')}
+    else {renderError(req);go('screen-error')}
+  };
+
+  function currentReq(){return getRequest(currentRequestId)}
+  function canDecide(req){
+    const role=window.viraCurrentRole||document.getElementById('roleSelect')?.value||'contractor';
+    return role==='admin'||(req.type==='ordinary'&&role==='security')||(req.type==='onetime'&&role==='manager');
+  }
+
+  window.approveCurrentRequest=function(){
+    const req=currentReq();if(!req)return;
+    if(!canDecide(req)){alert('У текущей роли нет права согласовывать эту заявку');return}
+    req.status='execution';req.stage='Исполнение';req.approvedAt=new Date().toISOString();
+    persistRequests();renderRequests();renderExecution(req);go('screen-execution');
+  };
+  window.beginReject=function(){
+    const req=currentReq();if(!req)return;
+    if(!canDecide(req)){alert('У текущей роли нет права отклонять эту заявку');return}
+    rejectReturnScreen=req.type==='onetime'?'screen-onetime':'screen-detail';
+    const t=document.getElementById('rejectComment');if(t)t.value='';
+    go('screen-reject');setTimeout(()=>t?.focus(),0);
+  };
+  window.cancelReject=function(){
+    const req=currentReq();if(req)renderApproval(req);
+    go(rejectReturnScreen);
+  };
+  window.confirmReject=function(){
+    const req=currentReq();if(!req)return;
+    const comment=document.getElementById('rejectComment')?.value.trim()||'';
+    if(!comment){alert('Комментарий при отказе обязателен');document.getElementById('rejectComment')?.focus();return}
+    req.status='rejected';req.stage='—';req.comment=comment;req.rejectedAt=new Date().toISOString();
+    persistRequests();renderRequests();renderRejected(req);go('screen-rejected-result');
+  };
+
+  window.simulateExecution=function(result){
+    const req=currentReq();if(!req||req.status!=='execution')return;
+    if(result==='success'){
+      req.status='processed';req.stage='—';req.processedAt=new Date().toISOString();
+      // Successful processing updates employee access.
+      (req.employees||[]).forEach(item=>{
+        const e=employees.find(x=>x.owner===req.contractor&&norm(x.name)===norm(item.name));
+        if(e){e.project=req.project;e.expiry=req.endDate?fullDate(req.endDate):(e.expiry||'—');e.status='active'}
+      });
+      save(EMPLOYEE_KEY,employees);renderEmployeeRegistry();
+      persistRequests();renderRequests();renderProcessed(req);go('screen-processed');
+    }else{
+      req.status='execution_error';req.stage='Исполнение';req.error='Ошибка исполнения';
+      persistRequests();renderRequests();renderError(req);go('screen-error');
+    }
+  };
+  window.retryExecution=function(){
+    const req=currentReq();if(!req)return;
+    if(!canDecide(req)){alert('У текущей роли нет права повторно запускать исполнение этой заявки');return}
+    req.status='execution';req.stage='Исполнение';delete req.error;
+    persistRequests();renderRequests();renderExecution(req);go('screen-execution');
+  };
+
+  // ---------- Real creation scenario ----------
+  function showValidation(messages){
+    const el=document.getElementById('requestValidationMessage');if(!el)return;
+    if(!messages.length){el.classList.remove('show');el.innerHTML='';return}
+    el.innerHTML='<strong>Проверьте заявку:</strong><br>'+messages.map(x=>'• '+safe(x)).join('<br>');
+    el.classList.add('show');
+  }
+
+  function contractorProjectsFor(name){
+    try{
+      if(typeof getContractorRegistry==='function'){
+        const item=getContractorRegistry().find(x=>norm(x.name)===norm(name));
+        if(item&&Array.isArray(item.projects))return item.projects;
+      }
+    }catch(e){}
+    return ['ЖК Сподвижники'];
+  }
+  function fillRequestProjects(contractorName){
+    const select=document.getElementById('requestProject');if(!select)return;
+    const projects=contractorProjectsFor(contractorName);
+    select.innerHTML='<option value="">Выберите объект</option>';
+    projects.forEach(project=>{
+      const opt=document.createElement('option');opt.value=project;opt.textContent=project;select.appendChild(opt);
+    });
+    if(projects.length===1)select.value=projects[0];
+  }
+
+  function collectRequestEmployees(){
+    return [...document.querySelectorAll('#requestEmployeesBody tr')].map(tr=>({
+      name:tr.querySelector('.emp-name')?.textContent.trim()||'',
+      position:tr.querySelector('.emp-position')?.textContent.trim()||'—',
+      phone:tr.querySelector('.emp-phone')?.textContent.trim()||'—',
+      passport:tr.dataset.passport||'—',
+      source:sourceText(tr)
+    })).filter(x=>x.name);
+  }
+
+  window.openRequestModal=function(){
+    if(!['contractor','admin'].includes(window.viraCurrentRole||document.getElementById('roleSelect')?.value||'contractor'))return;
+    const modal=document.getElementById('new-request');if(!modal)return;
+    document.getElementById('type-ordinary').checked=true;
+    fillRequestProjects(OWNER);
+    const project=document.getElementById('requestProject');
+    const start=document.getElementById('requestStartDate'),end=document.getElementById('requestEndDate');
+    const t=todayIso();if(start)start.value=t;if(end)end.value=addDaysIso(t,30);
+    const tbody=document.getElementById('requestEmployeesBody');if(tbody)tbody.innerHTML='';
+    window.updateRequestEmployeeCount?.();showValidation([]);
+    modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+    window.updatePassTypeHint?.();
+  };
+
+  window.submitRequestDemo=function(){
+    const type=document.getElementById('type-onetime')?.checked?'onetime':'ordinary';
+    const project=document.getElementById('requestProject')?.value||'';
+    const start=document.getElementById('requestStartDate')?.value||'';
+    const end=document.getElementById('requestEndDate')?.value||'';
+    const emps=collectRequestEmployees();
+    const errors=[];
+    if(!project)errors.push('Выберите объект.');
+    if(!start)errors.push('Укажите дату начала.');
+    if(!end)errors.push('Укажите дату окончания.');
+    if(start&&end&&end<start)errors.push('Дата окончания не может быть раньше даты начала.');
+    if(!emps.length)errors.push('Добавьте хотя бы одного сотрудника.');
+    if(errors.length){showValidation(errors);return}
+    showValidation([]);
+
+    const id=String(maxRequestNumber()+1);
+    const req={
+      id,date:fullDate(todayIso()),contractor:OWNER,type,project,startDate:start,endDate:end,
+      employeeCount:emps.length,employees:emps,stage:type==='onetime'?'Рук. площадки':'СБ',
+      status:'approval',route:type==='onetime'?'manager':'security',comment:'',createdAt:new Date().toISOString()
+    };
+    requests.push(req);persistRequests();renderRequests();
+    window.closeRequestModal?.();
+    currentRequestId=id;renderApproval(req);go(type==='onetime'?'screen-onetime':'screen-detail');
+  };
+
+  // When switching to a one-time pass, default the end date to the start date.
+  const previousHint=window.updatePassTypeHint;
+  window.updatePassTypeHint=function(){
+    previousHint?.();
+    const start=document.getElementById('requestStartDate'),end=document.getElementById('requestEndDate');
+    if(document.getElementById('type-onetime')?.checked&&start&&end)end.value=start.value||todayIso();
+  };
+  document.getElementById('requestStartDate')?.addEventListener('change',()=>{
+    if(document.getElementById('type-onetime')?.checked){
+      const end=document.getElementById('requestEndDate');if(end)end.value=document.getElementById('requestStartDate').value;
+    }
+  });
+
+  // Keep role UI/filtering valid after dynamic rendering.
+  const previousSetRole=window.setRole;
+  window.setRole=function(role){
+    document.body.dataset.role=role;
+    previousSetRole?.(role);
+    renderRequests();
+    renderEmployeeRegistry();
+    // После перерисовки повторно применяем ролевые ограничения к новым строкам.
+    previousSetRole?.(role);
+  };
+  renderRequests();
+  window.setRole(document.getElementById('roleSelect')?.value||'contractor');
+})();
+</script>
+
+
+<script>
+(function(){
+  'use strict';
+  const EMPLOYEE_KEY='viraPassPrototypeEmployeesV12';
+  const OWNER='ООО «МонтажСтрой»';
+  const safe=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  const norm=s=>String(s||'').toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/\s+/g,' ').trim();
+  const readEmployees=()=>{try{const v=JSON.parse(localStorage.getItem(EMPLOYEE_KEY)||'[]');return Array.isArray(v)?v:[]}catch(e){return[]}};
+  const saveEmployees=v=>{try{localStorage.setItem(EMPLOYEE_KEY,JSON.stringify(v))}catch(e){}};
+  const passportValue=(series,number)=>{
+    series=String(series||'').replace(/\D/g,'');number=String(number||'').replace(/\D/g,'');
+    if(!series&&!number)return {ok:true,value:'—'};
+    if(!/^\d{4}$/.test(series))return {ok:false,message:'Серия паспорта должна содержать 4 цифры.'};
+    if(!/^\d{6}$/.test(number))return {ok:false,message:'Номер паспорта должен содержать 6 цифр.'};
+    return {ok:true,value:`${series} ${number}`};
+  };
+  const maskPassport=p=>{
+    const digits=String(p||'').replace(/\D/g,'');
+    return /^\d{10}$/.test(digits)?`${digits.slice(0,2)} ${digits.slice(2,4)} ••••••`:'—';
+  };
+  function showValidation(id,message){
+    const el=document.getElementById(id);if(!el)return;
+    if(!message){el.classList.remove('show');el.textContent='';return}
+    el.textContent=message;el.classList.add('show');
+  }
+  function renumberRequest(){
+    document.querySelectorAll('#requestEmployeesBody tr').forEach((tr,i)=>{const n=tr.querySelector('.num');if(n)n.textContent=i+1});
+    window.updateRequestEmployeeCount?.();
+  }
+  function requestHasEmployee(name){
+    return [...document.querySelectorAll('#requestEmployeesBody .emp-name')].some(td=>norm(td.textContent)===norm(name));
+  }
+  function appendRequestEmployee(data,source='Из списка'){
+    if(requestHasEmployee(data.name))return false;
+    const tbody=document.getElementById('requestEmployeesBody');if(!tbody)return false;
+    const tr=document.createElement('tr');
+    tr.dataset.saved='1';tr.dataset.passport=data.passport||'—';
+    tr.innerHTML=`<td class="num"></td><td class="emp-name">${safe(data.name)}</td><td class="emp-position">${safe(data.position||'—')}</td><td class="emp-phone">${safe(data.phone||'—')}</td><td class="emp-passport"><span class="passport-value">${safe(maskPassport(data.passport))}</span></td><td><span class="badge ok">${safe(source)}</span></td><td class="action-cell"><button class="mini-action delete" type="button" onclick="removeRequestEmployee(this)">Удал.</button></td>`;
+    tbody.appendChild(tr);renumberRequest();return true;
+  }
+  function switchInline(mode){
+    const editor=document.getElementById('requestEmployeeEditor');if(!editor)return;
+    editor.classList.add('open');
+    const existing=mode==='existing';
+    document.getElementById('inlineExistingPanel')?.classList.toggle('active',existing);
+    document.getElementById('inlineNewPanel')?.classList.toggle('active',!existing);
+    document.getElementById('inlineExistingTab')?.classList.toggle('active',existing);
+    document.getElementById('inlineNewTab')?.classList.toggle('active',!existing);
+  }
+  window.openEmployeeChoice=function(){switchInline('existing');window.showExistingEmployeePicker();};
+  window.closeEmployeeSubmodals=function(){
+    document.getElementById('requestEmployeeEditor')?.classList.remove('open');
+    showValidation('inlineEmployeeValidation','');
+  };
+  window.backToEmployeeChoice=function(){switchInline('existing');window.showExistingEmployeePicker();};
+  window.showExistingEmployeePicker=function(){
+    switchInline('existing');
+    const list=document.getElementById('inlineExistingList');if(!list)return;
+    const employees=readEmployees().filter(e=>e.owner===OWNER);
+    list.innerHTML=employees.length?employees.map(e=>{
+      const added=requestHasEmployee(e.name);
+      return `<label class="picker-check" data-search="${safe(norm(`${e.name} ${e.position||''} ${e.project||''}`))}"><input type="checkbox" value="${safe(e.name)}" data-position="${safe(e.position||'—')}" data-phone="${safe(e.phone||'—')}" data-passport="${safe(e.passport||'—')}" ${added?'checked disabled':''}><span><strong>${safe(e.name)}</strong><small>${safe(e.position||'—')} · ${safe(e.project||'—')}</small></span></label>`;
+    }).join(''):'<div class="note">В реестре пока нет сотрудников.</div>';
+    const q=document.getElementById('inlineEmployeeSearch');if(q)q.value='';
+  };
+  window.filterInlineEmployeeList=function(){
+    const q=norm(document.getElementById('inlineEmployeeSearch')?.value||'');
+    document.querySelectorAll('#inlineExistingList .picker-check').forEach(el=>{
+      el.style.display=!q||(el.dataset.search||'').includes(q)?'':'none';
+    });
+  };
+  window.showNewEmployeeModal=function(){
+    switchInline('new');
+    showValidation('inlineEmployeeValidation','');
+    setTimeout(()=>document.getElementById('newEmpName')?.focus(),0);
+  };
+  window.addSelectedExistingEmployees=function(){
+    const selected=[...document.querySelectorAll('#inlineExistingList input[type="checkbox"]:checked:not(:disabled)')];
+    selected.forEach(cb=>appendRequestEmployee({
+      name:cb.value,
+      position:cb.dataset.position||'—',
+      phone:cb.dataset.phone||'—',
+      passport:cb.dataset.passport||'—'
+    },'Из списка'));
+    window.showExistingEmployeePicker();
+  };
+  window.createNewEmployeeFromModal=function(){
+    const name=document.getElementById('newEmpName')?.value.trim()||'';
+    if(!name){showValidation('inlineEmployeeValidation','Заполните ФИО сотрудника.');return}
+    const pass=passportValue(document.getElementById('newEmpPassportSeries')?.value,document.getElementById('newEmpPassportNumber')?.value);
+    if(!pass.ok){showValidation('inlineEmployeeValidation',pass.message);return}
+    if(requestHasEmployee(name)){showValidation('inlineEmployeeValidation','Этот сотрудник уже добавлен в заявку.');return}
+    const data={
+      name,
+      position:document.getElementById('newEmpPosition')?.value.trim()||'—',
+      phone:document.getElementById('newEmpPhone')?.value.trim()||'—',
+      passport:pass.value
+    };
+    const employees=readEmployees();
+    if(!employees.some(e=>e.owner===OWNER&&norm(e.name)===norm(name))){
+      window.addEmployeeRow?.('employeesTableBody');
+      const tr=document.querySelector('#employeesTableBody tr.unsaved-row:last-child');
+      if(tr){
+        tr.querySelector('.emp-name-input').value=data.name;
+        tr.querySelector('.emp-position-input').value=data.position;
+        tr.querySelector('.emp-project-input').value=document.getElementById('requestProject')?.value||'ЖК Сподвижники';
+        tr.dataset.phone=data.phone;
+        tr.dataset.passport=data.passport;
+        tr.dataset.status='new';
+        window.saveEmployeeRow?.(tr.querySelector('.employee-action'));
+      }
+    }
+    appendRequestEmployee(data,'Новый');
+    ['newEmpName','newEmpPosition','newEmpPhone','newEmpPassportSeries','newEmpPassportNumber'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+    showValidation('inlineEmployeeValidation','');
+    window.showExistingEmployeePicker();
+  };
+
+  window.openEmployeeRegistryModal=function(){
+    if(!['contractor','admin'].includes(window.viraCurrentRole||document.getElementById('roleSelect')?.value||'contractor'))return;
+    ['registryEmpName','registryEmpPosition','registryEmpPhone','registryEmpPassportSeries','registryEmpPassportNumber'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+    const project=document.getElementById('registryEmpProject');if(project)project.selectedIndex=0;
+    showValidation('registryEmployeeValidation','');
+    const modal=document.getElementById('employeeRegistryModal');if(!modal)return;
+    modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+    setTimeout(()=>document.getElementById('registryEmpName')?.focus(),0);
+  };
+  window.closeEmployeeRegistryModal=function(){
+    const modal=document.getElementById('employeeRegistryModal');if(!modal)return;
+    modal.classList.remove('open');modal.setAttribute('aria-hidden','true');
+  };
+  window.saveEmployeeRegistryModal=function(){
+    const name=document.getElementById('registryEmpName')?.value.trim()||'';
+    if(!name){showValidation('registryEmployeeValidation','Заполните ФИО сотрудника.');return}
+    const pass=passportValue(document.getElementById('registryEmpPassportSeries')?.value,document.getElementById('registryEmpPassportNumber')?.value);
+    if(!pass.ok){showValidation('registryEmployeeValidation',pass.message);return}
+    const employees=readEmployees();
+    if(employees.some(e=>e.owner===OWNER&&norm(e.name)===norm(name))){
+      showValidation('registryEmployeeValidation','Сотрудник с таким ФИО уже есть в реестре.');return
+    }
+    window.addEmployeeRow?.('employeesTableBody');
+    const tr=document.querySelector('#employeesTableBody tr.unsaved-row:last-child');
+    if(!tr){showValidation('registryEmployeeValidation','Не удалось создать сотрудника.');return}
+    tr.querySelector('.emp-name-input').value=name;
+    tr.querySelector('.emp-position-input').value=document.getElementById('registryEmpPosition')?.value.trim()||'—';
+    tr.querySelector('.emp-project-input').value=document.getElementById('registryEmpProject')?.value||'ЖК Сподвижники';
+    tr.dataset.phone=document.getElementById('registryEmpPhone')?.value.trim()||'—';
+    tr.dataset.passport=pass.value;
+    tr.dataset.status='new';
+    const saveButton=tr.querySelector('.employee-action');
+    window.saveEmployeeRow?.(saveButton);
+    const saved=readEmployees();
+    const item=saved.find(e=>e.owner===OWNER&&norm(e.name)===norm(name));
+    if(item){item.phone=tr.dataset.phone||'—';item.passport=tr.dataset.passport||'—';item.status='new';saveEmployees(saved)}
+    window.closeEmployeeRegistryModal();
+    window.applyEmployeeFilters?.();
+  };
+
+  const oldCloseRequestModal=window.closeRequestModal;
+  window.closeRequestModal=function(){
+    window.closeEmployeeSubmodals();
+    oldCloseRequestModal?.();
+  };
+
+  ['newEmpPassportSeries','newEmpPassportNumber','registryEmpPassportSeries','registryEmpPassportNumber'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'')});
+  });
+
+  document.querySelectorAll('#contractorsTable tbody tr').forEach(tr=>{
+    if(!tr.dataset.accountStatus)tr.dataset.accountStatus='active';
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  'use strict';
+  const EMPLOYEE_KEY='viraPassPrototypeEmployeesV12';
+  const OWNER='ООО «МонтажСтрой»';
+  const norm=s=>String(s||'').toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/\s+/g,' ').trim();
+  const readEmployees=()=>{try{const v=JSON.parse(localStorage.getItem(EMPLOYEE_KEY)||'[]');return Array.isArray(v)?v:[]}catch(e){return[]}};
+  const saveEmployees=v=>{try{localStorage.setItem(EMPLOYEE_KEY,JSON.stringify(v))}catch(e){}};
+  const passportParts=p=>{
+    const digits=String(p||'').replace(/\D/g,'');
+    return /^\d{10}$/.test(digits)?{series:digits.slice(0,4),number:digits.slice(4)}:{series:'',number:''};
+  };
+  const passportValue=(series,number)=>{
+    series=String(series||'').replace(/\D/g,'');number=String(number||'').replace(/\D/g,'');
+    if(!series&&!number)return {ok:true,value:'—'};
+    if(!/^\d{4}$/.test(series))return {ok:false,message:'Серия паспорта должна содержать 4 цифры.'};
+    if(!/^\d{6}$/.test(number))return {ok:false,message:'Номер паспорта должен содержать 6 цифр.'};
+    return {ok:true,value:`${series} ${number}`};
+  };
+  function setValidation(message){
+    const el=document.getElementById('registryEmployeeValidation');if(!el)return;
+    if(!message){el.classList.remove('show');el.textContent='';return}
+    el.textContent=message;el.classList.add('show');
+  }
+  let editingEmployeeKey=null;
+
+  function resetEmployeeModal(mode){
+    const modal=document.getElementById('employeeRegistryModal');if(!modal)return;
+    modal.dataset.mode=mode;
+    const title=document.getElementById('employeeRegistryModalTitle');
+    const btn=document.getElementById('saveEmployeeRegistryBtn');
+    if(title)title.textContent=mode==='edit'?'Редактирование сотрудника':'Новый сотрудник';
+    if(btn)btn.textContent=mode==='edit'?'Сохранить изменения':'Сохранить';
+    ['registryEmpName','registryEmpPosition','registryEmpPhone','registryEmpPassportSeries','registryEmpPassportNumber','registryEmpExpiry'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.value='';
+    });
+    const project=document.getElementById('registryEmpProject');if(project)project.selectedIndex=0;
+    const status=document.getElementById('registryEmpStatus');if(status)status.value='active';
+    setValidation('');
+  }
+
+  window.openEmployeeRegistryModal=function(){
+    if(!['contractor','admin'].includes(window.viraCurrentRole||document.getElementById('roleSelect')?.value||'contractor'))return;
+    editingEmployeeKey=null;
+    resetEmployeeModal('create');
+    const modal=document.getElementById('employeeRegistryModal');if(!modal)return;
+    modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+    setTimeout(()=>document.getElementById('registryEmpName')?.focus(),0);
+  };
+
+  window.editEmployeeRow=function(btn){
+    const tr=btn.closest('tr');if(!tr)return;
+    const role=window.viraCurrentRole||document.getElementById('roleSelect')?.value||'contractor';
+    const owner=tr.dataset.owner||tr.querySelector('.emp-owner')?.textContent.trim()||OWNER;
+    if(!(role==='admin'||(role==='contractor'&&owner===OWNER)))return;
+
+    const employeeId=tr.dataset.employeeId||'';
+    const oldName=tr.querySelector('.emp-name')?.textContent.trim()||'';
+    const employees=readEmployees();
+    const item=employees.find(e=>employeeId&&e.id===employeeId) || employees.find(e=>e.owner===owner&&norm(e.name)===norm(oldName));
+    if(!item)return;
+
+    editingEmployeeKey={id:item.id||'',owner:item.owner||owner,oldName:item.name};
+    resetEmployeeModal('edit');
+    document.getElementById('registryEmpName').value=item.name||'';
+    document.getElementById('registryEmpPosition').value=item.position||'';
+    document.getElementById('registryEmpPhone').value=item.phone==='—'?'':(item.phone||'');
+    const project=document.getElementById('registryEmpProject');
+    if(project&&[...project.options].some(o=>o.value===item.project))project.value=item.project;
+    const parts=passportParts(item.passport);
+    document.getElementById('registryEmpPassportSeries').value=parts.series;
+    document.getElementById('registryEmpPassportNumber').value=parts.number;
+    const expiry=document.getElementById('registryEmpExpiry');
+    if(expiry&&/^\d{2}\.\d{2}\.\d{4}$/.test(item.expiry||''))expiry.value=item.expiry.split('.').reverse().join('-');
+    const status=document.getElementById('registryEmpStatus');if(status)status.value=item.status||'active';
+
+    const modal=document.getElementById('employeeRegistryModal');if(!modal)return;
+    modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+    setTimeout(()=>document.getElementById('registryEmpName')?.focus(),0);
+  };
+
+  const previousClose=window.closeEmployeeRegistryModal;
+  window.closeEmployeeRegistryModal=function(){
+    editingEmployeeKey=null;
+    const modal=document.getElementById('employeeRegistryModal');
+    if(modal)modal.dataset.mode='create';
+    previousClose?.();
+  };
+
+  const previousSaveCreate=window.saveEmployeeRegistryModal;
+  window.saveEmployeeRegistryModal=function(){
+    if(!editingEmployeeKey){previousSaveCreate?.();return;}
+
+    const name=document.getElementById('registryEmpName')?.value.trim()||'';
+    if(!name){setValidation('Заполните ФИО сотрудника.');return}
+    const pass=passportValue(
+      document.getElementById('registryEmpPassportSeries')?.value,
+      document.getElementById('registryEmpPassportNumber')?.value
+    );
+    if(!pass.ok){setValidation(pass.message);return}
+
+    const employees=readEmployees();
+    const idx=employees.findIndex(e=>
+      (editingEmployeeKey.id&&e.id===editingEmployeeKey.id) ||
+      (!editingEmployeeKey.id&&e.owner===editingEmployeeKey.owner&&norm(e.name)===norm(editingEmployeeKey.oldName))
+    );
+    if(idx<0){setValidation('Сотрудник не найден.');return}
+    const duplicate=employees.find((e,i)=>i!==idx&&e.owner===employees[idx].owner&&norm(e.name)===norm(name));
+    if(duplicate){setValidation('Сотрудник с таким ФИО уже есть в реестре.');return}
+
+    const old=employees[idx];
+    const expiryIso=document.getElementById('registryEmpExpiry')?.value||'';
+    employees[idx]={
+      ...old,
+      name,
+      position:document.getElementById('registryEmpPosition')?.value.trim()||'—',
+      phone:document.getElementById('registryEmpPhone')?.value.trim()||'—',
+      project:document.getElementById('registryEmpProject')?.value||old.project||'—',
+      passport:pass.value,
+      expiry:expiryIso?expiryIso.split('-').reverse().join('.'):'—',
+      status:document.getElementById('registryEmpStatus')?.value||old.status||'active'
+    };
+    saveEmployees(employees);
+    editingEmployeeKey=null;
+    const modal=document.getElementById('employeeRegistryModal');
+    if(modal){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');modal.dataset.mode='create';}
+    window.setRole?.(roleForRefresh());
+    const screenEmployees=document.getElementById('screen-employees');if(screenEmployees)screenEmployees.checked=true;
+    window.applyEmployeeFilters?.();
+  };
+
+  function roleForRefresh(){
+    return window.viraCurrentRole||document.getElementById('roleSelect')?.value||'contractor';
+  }
+})();
+</script>
+
+</body>
+</html>
